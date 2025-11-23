@@ -39,7 +39,7 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
 
   if (!isAdmin || !isLocalhost) return null;
 
-  const API_URL = 'http://localhost:5001/api';
+  const API_URL = import.meta.env.VITE_SCRAPER_API_URL || 'https://subcaecal-taunya-tally.ngrok-free.dev/api';
 
   const handleSearch = async () => {
     setIsSearching(true);
