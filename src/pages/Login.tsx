@@ -92,14 +92,6 @@ const Login = () => {
             {isLoading ? 'Logowanie...' : t('auth.signInWithGoogle')}
           </Button>
 
-          {/* Configuration Warning */}
-          <div className="mt-4 p-3 bg-yellow-500/10 border border-yellow-500/20 rounded-lg flex gap-2">
-            <AlertCircle className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
-            <p className="text-xs text-yellow-500/90">
-              Jeśli widzisz błąd konfiguracji, dodaj <code className="bg-yellow-500/20 px-1 rounded">localhost</code> do autoryzowanych domen w Firebase Console.
-            </p>
-          </div>
-
           {/* Footer */}
           <p className="text-center text-sm text-foreground-secondary mt-6">
             Logując się, akceptujesz nasze warunki użytkowania
