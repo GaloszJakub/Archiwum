@@ -33,11 +33,8 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
   const [selectedEpisodes, setSelectedEpisodes] = useState<Set<string>>(new Set());
   const [seasons, setSeasons] = useState<string[]>([]);
 
-  const isLocalhost = window.location.hostname === 'localhost' || 
-                      window.location.hostname === '127.0.0.1' ||
-                      window.location.hostname === '[::1]';
-
-  if (!isAdmin || !isLocalhost) return null;
+  // Scraper is available for admins (works via ngrok tunnel)
+  if (!isAdmin) return null;
 
   const API_URL = import.meta.env.VITE_SCRAPER_API_URL || 'https://subcaecal-taunya-tally.ngrok-free.dev/api';
 
