@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: filman-scraper-api
+    runtime: python
+    region: frankfurt
+    plan: free
+    rootDir: backend
+    buildCommand: |
+      # Install Chrome dependencies
+      apt-get update
+      apt-get install -y wget gnupg
+      wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
+      echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google-chrome.list
+      apt-get update
+      apt-get install -y google-chrome-stable
+      # Install Python dependencies
+      pip install -r requirements.txt
+    startCommand: gunicorn app:app --config gunicorn.conf.py
+    envVars:
+      - key: HEADLESS_MODE
+        value: "True"
+      - key: FLASK_DEBUG
+        value: "False"
+      - key: PYTHON_VERSION
+        value: "3.11"
