@@ -1,0 +1,229 @@
+{
+  "info": {
+    "name": "FilmanScraper API - Cloud Ready",
+    "description": "Example API requests for testing the cloud-ready scraper",
+    "version": "2.0.0"
+  },
+  "baseUrl": "http://localhost:5001",
+  "productionUrl": "https://your-app.onrender.com",
+  "endpoints": [
+    {
+      "name": "Health Check",
+      "method": "GET",
+      "path": "/api/health",
+      "description": "Check API status and login state",
+      "example_response": {
+        "status": "ok",
+        "message": "FilmanScraper API is running",
+        "logged_in": true,
+        "has_cookies": true
+      }
+    },
+    {
+      "name": "Keep-Alive",
+      "method": "GET",
+      "path": "/api/keep-alive",
+      "description": "Prevent server sleep and refresh session",
+      "example_response": {
+        "status": "alive",
+        "message": "Session refreshed",
+        "logged_in": true
+      }
+    },
+    {
+      "name": "Update Session (Cookie String)",
+      "method": "POST",
+      "path": "/api/update-session",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "cookie_string": "session_id=abc123; user_token=xyz789; remember_me=1"
+      },
+      "description": "Update session cookies using cookie string format",
+      "example_response": {
+        "success": true,
+        "message": "Session cookies updated successfully",
+        "logged_in": true,
+        "cookies_count": 3
+      }
+    },
+    {
+      "name": "Update Session (Cookies Array)",
+      "method": "POST",
+      "path": "/api/update-session",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "cookies": [
+          {
+            "name": "session_id",
+            "value": "abc123",
+            "domain": ".filman.cc"
+          },
+          {
+            "name": "user_token",
+            "value": "xyz789",
+            "domain": ".filman.cc"
+          },
+          {
+            "name": "remember_me",
+            "value": "1",
+            "domain": ".filman.cc"
+          }
+        ]
+      },
+      "description": "Update session cookies using array format",
+      "example_response": {
+        "success": true,
+        "message": "Session cookies updated successfully",
+        "logged_in": true,
+        "cookies_count": 3
+      }
+    },
+    {
+      "name": "Search Series",
+      "method": "POST",
+      "path": "/api/scrape/search",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "title": "Breaking Bad",
+        "type": "serial",
+        "year": 2008
+      },
+      "description": "Search for a series and get episode list",
+      "example_response": {
+        "success": true,
+        "title": "Breaking Bad",
+        "type": "serial",
+        "year": "2008",
+        "url": "https://filman.cc/serial/breaking-bad-2008",
+        "episodes": [
+          {
+            "episode": "S01E01",
+            "title": "Pilot",
+            "url": "https://filman.cc/serial/breaking-bad-2008/s01e01"
+          }
+        ],
+        "count": 62
+      }
+    },
+    {
+      "name": "Search Movie",
+      "method": "POST",
+      "path": "/api/scrape/search",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "title": "Inception",
+        "type": "film",
+        "year": 2010
+      },
+      "description": "Search for a movie",
+      "example_response": {
+        "success": true,
+        "title": "Inception",
+        "type": "film",
+        "year": "2010",
+        "url": "https://filman.cc/film/inception-2010",
+        "episodes": [
+          {
+            "episode": "FILM",
+            "title": "Inception",
+            "url": "https://filman.cc/film/inception-2010"
+          }
+        ],
+        "count": 1
+      }
+    },
+    {
+      "name": "Get Streaming Links",
+      "method": "POST",
+      "path": "/api/scrape/links",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "episodes": [
+          {
+            "episode": "S01E01",
+            "url": "https://filman.cc/serial/breaking-bad-2008/s01e01"
+          },
+          {
+            "episode": "S01E02",
+            "url": "https://filman.cc/serial/breaking-bad-2008/s01e02"
+          }
+        ]
+      },
+      "description": "Get streaming links for specific episodes",
+      "example_response": {
+        "success": true,
+        "results": [
+          {
+            "episode": "S01E01",
+            "url": "https://filman.cc/serial/breaking-bad-2008/s01e01",
+            "links": [
+              {
+                "provider": "doodstream",
+                "url": "https://dood.stream/e/abc123",
+                "quality": "720p",
+                "version": "Lektor PL"
+              }
+            ]
+          }
+        ],
+        "count": 2
+      }
+    },
+    {
+      "name": "Test Endpoint",
+      "method": "POST",
+      "path": "/api/test",
+      "headers": {
+        "Content-Type": "application/json"
+      },
+      "body": {
+        "test": "data",
+        "message": "hello"
+      },
+      "description": "Simple test endpoint without scraper",
+      "example_response": {
+        "success": true,
+        "message": "Test OK",
+        "received": {
+          "test": "data",
+          "message": "hello"
+        }
+      }
+    }
+  ],
+  "error_responses": {
+    "401_unauthorized": {
+      "success": false,
+      "error": "Not logged in. Please update session cookies via /api/update-session"
+    },
+    "400_bad_request": {
+      "success": false,
+      "error": "Missing title in request body"
+    },
+    "404_not_found": {
+      "success": false,
+      "error": "Nie znaleziono wyników"
+    },
+    "500_server_error": {
+      "success": false,
+      "error": "Internal server error message"
+    }
+  },
+  "curl_examples": {
+    "health": "curl http://localhost:5001/api/health",
+    "keep_alive": "curl http://localhost:5001/api/keep-alive",
+    "update_session": "curl -X POST http://localhost:5001/api/update-session -H 'Content-Type: application/json' -d '{\"cookie_string\": \"session=abc123\"}'",
+    "search": "curl -X POST http://localhost:5001/api/scrape/search -H 'Content-Type: application/json' -d '{\"title\": \"Breaking Bad\", \"type\": \"serial\", \"year\": 2008}'",
+    "links": "curl -X POST http://localhost:5001/api/scrape/links -H 'Content-Type: application/json' -d '{\"episodes\": [{\"episode\": \"S01E01\", \"url\": \"https://filman.cc/serial/breaking-bad-2008/s01e01\"}]}'"
+  }
+}

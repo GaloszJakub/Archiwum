@@ -140,6 +140,50 @@ class FilmanScraper:
             self._log(f"Timeout waiting for element: {selector}")
             return None
     
+    def inject_cookies(self, cookies: List[Dict[str, str]]):
+        """
+        Injects cookies into the browser session.
+        
+        Args:
+            cookies: List of cookie dictionaries with 'name', 'value', and optionally 'domain'
+        """
+        try:
+            if not self.driver:
+                self._init_driver()
+            
+            if not self.driver:
+                raise Exception("Driver not available for cookie injection")
+            
+            # Navigate to the domain first (required for adding cookies)
+            self.driver.get(self.BASE_URL)
+            time.sleep(1)
+            
+            # Add each cookie
+            for cookie in cookies:
+                try:
+                    # Ensure required fields
+                    if 'name' not in cookie or 'value' not in cookie:
+                        self._log(f"Skipping invalid cookie: {cookie}")
+                        continue
+                    
+                    # Add domain if not present
+                    if 'domain' not in cookie:
+                        cookie['domain'] = '.filman.cc'
+                    
+                    self.driver.add_cookie(cookie)
+                    self._log(f"✓ Added cookie: {cookie['name']}")
+                except Exception as e:
+                    self._log(f"Failed to add cookie {cookie.get('name', 'unknown')}: {e}")
+            
+            # Refresh to apply cookies
+            self.driver.refresh()
+            time.sleep(2)
+            
+            self._log("✓ Cookies injected successfully")
+        except Exception as e:
+            self._log(f"Error injecting cookies: {e}")
+            raise
+    
     def check_if_logged_in(self) -> bool:
         """
         Checks for an active login session by looking for a "Logout" link.

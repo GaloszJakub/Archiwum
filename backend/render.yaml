@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: filman-scraper-api
+    env: python
+    region: frankfurt  # lub oregon, singapore
+    plan: free  # lub starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app --config gunicorn.conf.py
+    envVars:
+      - key: HEADLESS_MODE
+        value: "True"
+      - key: FLASK_DEBUG
+        value: "False"
+      - key: PYTHON_VERSION
+        value: "3.11.6"
+    healthCheckPath: /api/health

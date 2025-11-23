@@ -11,3 +11,15 @@ ENV/
 *.log
 chromedriver*
 .DS_Store
+
+# Session cookies (cloud deployment)
+session_cookies.json
+
+# Chrome profile
+chrome_profile/
+
+# SQLite databases
+*.db
+
+# Real cookies for testing (DO NOT COMMIT!)
+real_cookies.json
