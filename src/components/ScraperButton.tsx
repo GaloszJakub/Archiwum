@@ -209,13 +209,18 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
         }
 
         toast.success(`Pobrano linki dla ${data.results.length} odcinków`, {
-          description: 'Odśwież stronę aby zobaczyć zmiany',
+          description: 'Strona zostanie odświeżona za chwilę...',
           icon: <CheckCircle2 className="w-5 h-5" />,
-          duration: 5000,
+          duration: 3000,
         });
 
         setIsOpen(false);
         setSelectedEpisodes(new Set());
+        
+        // Auto-refresh po 2 sekundach
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
       } else {
         toast.error('Nie udało się pobrać linków', {
           description: data.error || 'Sprawdź logi w konsoli',
@@ -256,7 +261,7 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
           <DialogHeader>
             <DialogTitle>
               Wybierz {type === 'series' ? 'odcinki' : 'film'} do pobrania
@@ -308,7 +313,7 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
                   ))}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-96 overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[50vh] overflow-y-auto">
                   {episodes.map((ep) => (
                     <div
                       key={ep.episode}

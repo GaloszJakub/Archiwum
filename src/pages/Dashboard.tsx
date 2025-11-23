@@ -1,21 +1,31 @@
 import { SplitText } from '@/components/SplitText';
 import { MovieCard } from '@/components/MovieCard';
-import { TrendingUp, Film, Tv, Star } from 'lucide-react';
+import { TrendingUp, Film, Tv, Star, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { usePopularMovies, usePopularTVShows } from '@/hooks/useTMDB';
 import { tmdbService } from '@/lib/tmdb';
 import { useTranslation } from 'react-i18next';
+import { useState } from 'react';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const [searchQuery, setSearchQuery] = useState('');
   const { data: popularMoviesData } = usePopularMovies();
   const { data: popularTVData } = usePopularTVShows();
 
   const popularMovies = popularMoviesData?.pages[0]?.results.slice(0, 6) || [];
   const popularTV = popularTVData?.pages[0]?.results.slice(0, 6) || [];
   const trending = [...popularMovies.slice(0, 3), ...popularTV.slice(0, 3)];
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
+    }
+  };
 
   return (
     <div className="space-y-12">
@@ -27,6 +37,20 @@ const Dashboard = () => {
         <p className="text-xl text-foreground-secondary max-w-2xl mx-auto">
           {t('dashboard.recommendations')}
         </p>
+        
+        {/* Search Bar */}
+        <form onSubmit={handleSearch} className="max-w-2xl mx-auto mt-6">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Input
+              type="text"
+              placeholder="Szukaj filmów i seriali..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-12 pr-4 py-6 text-lg bg-background-secondary border-border"
+            />
+          </div>
+        </form>
       </div>
 
       <section className="space-y-6">

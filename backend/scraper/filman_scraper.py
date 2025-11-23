@@ -7,6 +7,8 @@ import re
 import time
 import traceback
 import logging
+import base64
+import json
 from typing import List, Dict, Optional
 
 from selenium import webdriver
@@ -449,7 +451,7 @@ class FilmanScraper:
         Navigates to an episode page and extracts streaming links from allowed providers.
         """
         links = []
-        ALLOWED_PROVIDERS = ['doodstream', 'voe.sx', 'savefiles']
+        ALLOWED_PROVIDERS = ['doodstream', 'voe.sx', 'savefiles', 'vid-guard', 'streamup']
         
         try:
             self._log(f"Navigating to episode page: {episode_url}")
@@ -466,7 +468,8 @@ class FilmanScraper:
                     cells = row.find_elements(By.TAG_NAME, 'td')
                     if len(cells) < 3: continue
 
-                    link_elem = row.find_element(By.CSS_SELECTOR, self.STREAMING_LINK_SELECTOR)
+                    # Get link from first column only (td.link-to-video)
+                    link_elem = row.find_element(By.CSS_SELECTOR, 'td.link-to-video ' + self.STREAMING_LINK_SELECTOR)
                     provider = link_elem.text.strip().lower().split()[0] if link_elem.text else 'unknown'
                     
                     if not any(allowed in provider for allowed in ALLOWED_PROVIDERS):
@@ -477,36 +480,20 @@ class FilmanScraper:
                     quality = cells[2].text.strip()
                     self._log(f"  + Processing link {idx+1}: {provider} | {version} | {quality}")
                     
-                    self.driver.execute_script("arguments[0].scrollIntoView({block: 'center'});", link_elem)
-                    time.sleep(0.5)
-                    self.driver.execute_script("arguments[0].click();", link_elem)
-                    time.sleep(3) # Wait for new tab and redirect
-                    
-                    if len(self.driver.window_handles) > 1:
-                        new_window_handle = [h for h in self.driver.window_handles if h != main_window_handle][0]
-                        self.driver.switch_to.window(new_window_handle)
-                    
+                    # Extract URL from data-iframe attribute (base64 encoded JSON)
                     streaming_url = None
                     try:
-                        # Try finding the final "go to player" button
-                        player_button = WebDriverWait(self.driver, 5).until(
-                            EC.presence_of_element_located((By.XPATH, "//a[contains(@class, 'btn') and contains(., 'Przejdź do Odtwarzacza')]"))
-                        )
-                        streaming_url = player_button.get_attribute('href')
-                        self._log("    ✓ Found URL via 'Go to Player' button.")
-                    except TimeoutException:
-                        # Fallback to finding an embedded iframe or video tag
-                        try:
-                            iframe = self.driver.find_element(By.CSS_SELECTOR, '#frame iframe[src], iframe[src]')
-                            streaming_url = iframe.get_attribute('src')
-                            self._log("    ✓ Found URL in an iframe src.")
-                        except NoSuchElementException:
-                            try:
-                                video = self.driver.find_element(By.CSS_SELECTOR, 'video[src]')
-                                streaming_url = video.get_attribute('src')
-                                self._log("    ✓ Found URL in a video src.")
-                            except NoSuchElementException:
-                                self._log("    ✗ Could not find streaming URL on the page.")
+                        data_iframe = link_elem.get_attribute('data-iframe')
+                        if data_iframe:
+                            # Decode base64 and parse JSON
+                            decoded = base64.b64decode(data_iframe).decode('utf-8')
+                            iframe_data = json.loads(decoded)
+                            streaming_url = iframe_data.get('src')
+                            self._log(f"    ✓ Extracted URL from data-iframe: {streaming_url}")
+                        else:
+                            self._log("    ✗ No data-iframe attribute found")
+                    except Exception as decode_error:
+                        self._log(f"    ✗ Error decoding data-iframe: {decode_error}")
                     
                     if streaming_url:
                         links.append({
@@ -514,15 +501,6 @@ class FilmanScraper:
                         })
                 except Exception as e:
                     self._log(f"    ✗ Error processing a link: {e}")
-                finally:
-                    # Close new tab and switch back to the main one
-                    try:
-                        if self.driver and len(self.driver.window_handles) > 1:
-                            self.driver.close()
-                        if self.driver and main_window_handle in self.driver.window_handles:
-                            self.driver.switch_to.window(main_window_handle)
-                    except Exception as cleanup_error:
-                        self._log(f"    ⚠ Error during cleanup: {cleanup_error}")
             
             self._log(f"✓ Extracted {len(links)} streaming links from allowed providers.")
             return links
