@@ -261,14 +261,14 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
       </Button>
 
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle>
               Wybierz {type === 'series' ? 'odcinki' : 'film'} do pobrania
             </DialogTitle>
           </DialogHeader>
 
-          <div className="space-y-4">
+          <div className="space-y-4 flex-1 overflow-y-auto">
             {type === 'movie' && episodes.length === 1 ? (
               <div className="space-y-4">
                 <div className="bg-primary/10 border-2 border-primary rounded-lg p-6">
@@ -313,7 +313,7 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
                   ))}
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2 max-h-[50vh] overflow-y-auto">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
                   {episodes.map((ep) => (
                     <div
                       key={ep.episode}
@@ -336,27 +336,28 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
               </>
             )}
 
-            <div className="flex items-center justify-between pt-4 border-t">
-              <div className="text-sm text-muted-foreground">
-                Wybrano: {selectedEpisodes.size} / {episodes.length}
-              </div>
-              <Button
-                onClick={handleScrape}
-                disabled={isScraping || selectedEpisodes.size === 0}
-              >
-                {isScraping ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Pobieranie...
-                  </>
-                ) : (
-                  <>
-                    <Download className="mr-2 h-4 w-4" />
-                    Pobierz linki ({selectedEpisodes.size})
-                  </>
-                )}
-              </Button>
+          </div>
+
+          <div className="flex items-center justify-between pt-4 border-t flex-shrink-0">
+            <div className="text-sm text-muted-foreground">
+              Wybrano: {selectedEpisodes.size} / {episodes.length}
             </div>
+            <Button
+              onClick={handleScrape}
+              disabled={isScraping || selectedEpisodes.size === 0}
+            >
+              {isScraping ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Pobieranie...
+                </>
+              ) : (
+                <>
+                  <Download className="mr-2 h-4 w-4" />
+                  Pobierz linki ({selectedEpisodes.size})
+                </>
+              )}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>

@@ -1,30 +1,46 @@
 import { SplitText } from '@/components/SplitText';
 import { MovieCard } from '@/components/MovieCard';
-import { TrendingUp, Film, Tv, Star, Search } from 'lucide-react';
+import { TrendingUp, Film, Tv, Star, Search, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
-import { usePopularMovies, usePopularTVShows } from '@/hooks/useTMDB';
+import { usePopularMovies, usePopularTVShows, useSearchMulti } from '@/hooks/useTMDB';
 import { tmdbService } from '@/lib/tmdb';
 import { useTranslation } from 'react-i18next';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Dashboard = () => {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const { data: popularMoviesData } = usePopularMovies();
   const { data: popularTVData } = usePopularTVShows();
+  const { data: searchData, isLoading: searchLoading } = useSearchMulti(debouncedQuery);
 
   const popularMovies = popularMoviesData?.pages[0]?.results.slice(0, 6) || [];
   const popularTV = popularTVData?.pages[0]?.results.slice(0, 6) || [];
   const trending = [...popularMovies.slice(0, 3), ...popularTV.slice(0, 3)];
 
+  const searchResults = searchData?.pages[0]?.results || [];
+  const showSearchResults = debouncedQuery.trim().length > 0;
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedQuery(searchQuery);
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
-    if (searchQuery.trim()) {
-      navigate(`/search?q=${encodeURIComponent(searchQuery.trim())}`);
-    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery('');
+    setDebouncedQuery('');
   };
 
   return (
@@ -47,11 +63,85 @@ const Dashboard = () => {
               placeholder="Szukaj filmów i seriali..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-4 py-6 text-lg bg-background-secondary border-border"
+              className="pl-12 pr-12 py-6 text-lg bg-background-secondary border-border"
             />
+            {searchQuery && (
+              <button
+                type="button"
+                onClick={clearSearch}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            )}
           </div>
         </form>
       </div>
+
+      {/* Search Results */}
+      <AnimatePresence>
+        {showSearchResults && (
+          <motion.section
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            className="space-y-6"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Search className="w-6 h-6 text-primary" />
+                <h2 className="text-3xl font-bold">
+                  Wyniki wyszukiwania dla "{debouncedQuery}"
+                </h2>
+              </div>
+            </div>
+
+            {searchLoading && (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-primary" />
+              </div>
+            )}
+
+            {!searchLoading && searchResults.length === 0 && (
+              <div className="text-center py-16 bg-background-secondary rounded-xl">
+                <p className="text-foreground-secondary text-lg">
+                  Nie znaleziono wyników dla "{debouncedQuery}"
+                </p>
+              </div>
+            )}
+
+            {!searchLoading && searchResults.length > 0 && (
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {searchResults.map((item: any) => {
+                  const isMovie = item.media_type === 'movie';
+                  const title = isMovie ? item.title : item.name;
+                  const year = isMovie 
+                    ? item.release_date ? new Date(item.release_date).getFullYear() : undefined
+                    : item.first_air_date ? new Date(item.first_air_date).getFullYear() : undefined;
+
+                  return (
+                    <div
+                      key={item.id}
+                      onClick={() => navigate(isMovie ? `/movie/${item.id}` : `/series/${item.id}`)}
+                    >
+                      <MovieCard
+                        id={item.id.toString()}
+                        title={title || 'Unknown'}
+                        posterUrl={tmdbService.getImageUrl(item.poster_path)}
+                        year={year}
+                        rating={item.vote_average}
+                        tmdbId={item.id}
+                        type={isMovie ? 'movie' : 'tv'}
+                        posterPath={item.poster_path}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </motion.section>
+        )}
+      </AnimatePresence>
 
       <section className="space-y-6">
         <div className="flex items-center justify-between">

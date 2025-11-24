@@ -27,6 +27,19 @@ export const useSearchTVShows = (query: string) => {
   });
 };
 
+export const useSearchMulti = (query: string) => {
+  return useInfiniteQuery({
+    queryKey: ['tmdb', 'search', 'multi', query],
+    queryFn: ({ pageParam = 1 }) => tmdbService.searchMulti(query, pageParam),
+    getNextPageParam: (lastPage) => {
+      return lastPage.page < lastPage.total_pages ? lastPage.page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    enabled: query.length > 0,
+    staleTime: 5 * 60 * 1000,
+  });
+};
+
 export const usePopularMovies = () => {
   return useInfiniteQuery({
     queryKey: ['tmdb', 'popular', 'movies'],
