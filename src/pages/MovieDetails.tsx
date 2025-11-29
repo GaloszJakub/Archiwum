@@ -74,7 +74,7 @@ const MovieDetails = () => {
 
         <AdditionalInfoGrid data={data} />
 
-        <ReviewsSection tmdbId={data.id} type="movie" />
+        <ReviewsSection tmdbId={data.id} type="movie" mediaTitle={data.title} />
       </div>
     </motion.div>
   );

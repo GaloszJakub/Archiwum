@@ -12,6 +12,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -40,6 +50,10 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
   const [language, setLanguage] = useState('PL');
   const [playerOpen, setPlayerOpen] = useState(false);
   const [currentPlayerUrl, setCurrentPlayerUrl] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [linkToDelete, setLinkToDelete] = useState<{ linkId: string; linkIndex: number } | null>(null);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [movieToDelete, setMovieToDelete] = useState<string | null>(null);
 
   const { data: links, isLoading } = useMovieLinks(tmdbId);
   const addMovieLink = useAddMovieLink();
@@ -98,56 +112,78 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
     }
   };
 
-  const handleDelete = async (linkId: string) => {
-    if (!confirm('Czy na pewno chcesz usunąć wszystkie linki tego filmu?')) return;
-
-    try {
-      await deleteMovieLink.mutateAsync({ tmdbId, linkId });
-      toast.success('Film usunięty');
-    } catch (error) {
-      console.error('Error deleting movie link:', error);
-      toast.error('Błąd podczas usuwania');
-    }
+  const handleDelete = (linkId: string) => {
+    setMovieToDelete(linkId);
+    setDeleteAllDialogOpen(true);
   };
 
-  const handleDeleteSingleLink = async (linkId: string, linkIndex: number) => {
+  const confirmDeleteAll = async () => {
+    if (!movieToDelete) return;
+
+    setDeleteAllDialogOpen(false);
+    const linkId = movieToDelete;
+    setMovieToDelete(null);
+
+    toast.promise(
+      deleteMovieLink.mutateAsync({ tmdbId, linkId }),
+      {
+        loading: 'Usuwanie wszystkich linków...',
+        success: 'Wszystkie linki usunięte',
+        error: 'Błąd podczas usuwania',
+      }
+    );
+  };
+
+  const handleDeleteSingleLink = (linkId: string, linkIndex: number) => {
+    setLinkToDelete({ linkId, linkIndex });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteLink = async () => {
+    if (!linkToDelete) return;
+    
+    const { linkId, linkIndex } = linkToDelete;
     const movieLink = links?.find(l => l.id === linkId);
     if (!movieLink || !movieLink.links) return;
 
-    if (!confirm('Czy na pewno chcesz usunąć ten link?')) return;
+    setDeleteDialogOpen(false);
+    setLinkToDelete(null);
 
-    try {
-      // Usuń link z array
-      const updatedLinks = movieLink.links.filter((_, idx) => idx !== linkIndex);
-      
-      // Jeśli to był ostatni link, usuń cały dokument
-      if (updatedLinks.length === 0) {
+    toast.promise(
+      (async () => {
+        // Usuń link z array
+        const updatedLinks = movieLink.links!.filter((_, idx) => idx !== linkIndex);
+        
+        // Jeśli to był ostatni link, usuń cały dokument
+        if (updatedLinks.length === 0) {
+          await deleteMovieLink.mutateAsync({ tmdbId, linkId });
+          return;
+        }
+
+        // Zaktualizuj dokument z nową listą linków
+        const movieRef = doc(db, 'episodes', linkId);
+        
+        // Zaktualizuj główny link na pierwszy z pozostałych
+        const mainLink = updatedLinks[0];
+        
+        await setDoc(movieRef, {
+          ...movieLink,
+          link: mainLink.url,
+          quality: mainLink.quality || '720p',
+          language: mainLink.version || 'PL',
+          links: updatedLinks,
+          updatedAt: new Date(),
+        }, { merge: true });
+
+        // Odśwież dane
         await deleteMovieLink.mutateAsync({ tmdbId, linkId });
-        return;
+      })(),
+      {
+        loading: 'Usuwanie linku...',
+        success: 'Link usunięty',
+        error: 'Błąd podczas usuwania linku',
       }
-
-      // Zaktualizuj dokument z nową listą linków
-      const movieRef = doc(db, 'episodes', linkId);
-      
-      // Zaktualizuj główny link na pierwszy z pozostałych
-      const mainLink = updatedLinks[0];
-      
-      await setDoc(movieRef, {
-        ...movieLink,
-        link: mainLink.url,
-        quality: mainLink.quality || '720p',
-        language: mainLink.version || 'PL',
-        links: updatedLinks,
-        updatedAt: new Date(),
-      }, { merge: true });
-
-      // Odśwież dane
-      await deleteMovieLink.mutateAsync({ tmdbId, linkId });
-      toast.success('Link usunięty');
-    } catch (error) {
-      console.error('Error deleting link:', error);
-      toast.error('Błąd podczas usuwania linku');
-    }
+    );
   };
 
   if (!isAdmin && (!links || links.length === 0)) {
@@ -362,6 +398,38 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Single Link Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć link?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz usunąć ten link? Ta operacja jest nieodwracalna.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteLink}>Usuń</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete All Links Dialog */}
+      <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć wszystkie linki?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz usunąć wszystkie linki tego filmu? Ta operacja jest nieodwracalna.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteAll}>Usuń wszystkie</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

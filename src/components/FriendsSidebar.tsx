@@ -134,7 +134,7 @@ export const FriendsSidebar = ({ isOpen, onClose }: FriendsSidebarProps) => {
             animate={{ x: 0 }}
             exit={{ x: '100%' }}
             transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-            className="fixed right-0 top-0 z-50 h-screen w-80 bg-background-secondary border-l border-border shadow-2xl"
+            className="fixed right-0 top-0 z-50 h-screen w-full sm:w-80 bg-background-secondary border-l border-border shadow-2xl overflow-y-auto"
           >
             <div className="flex flex-col h-full">
         {/* Header */}

@@ -20,6 +20,7 @@ export interface Review {
   userName: string;
   rating: number; // 0-5
   review: string;
+  mediaTitle?: string; // Optional: title of movie/series
   createdAt: Date;
   updatedAt: Date;
 }
@@ -32,7 +33,8 @@ class ReviewsService {
     userId: string,
     userName: string,
     rating: number,
-    review: string
+    review: string,
+    mediaTitle?: string
   ): Promise<void> {
     const reviewId = `${tmdbId}_${type}_${userId}`;
     const reviewRef = doc(db, 'reviews', reviewId);
@@ -46,6 +48,7 @@ class ReviewsService {
         userName,
         rating,
         review,
+        mediaTitle: mediaTitle || '',
         createdAt: Timestamp.now(),
         updatedAt: Timestamp.now(),
       },
@@ -102,6 +105,7 @@ class ReviewsService {
         userName: data.userName,
         rating: data.rating,
         review: data.review,
+        mediaTitle: data.mediaTitle,
         createdAt: data.createdAt?.toDate() || new Date(),
         updatedAt: data.updatedAt?.toDate() || new Date(),
       };
@@ -128,6 +132,32 @@ class ReviewsService {
       average: sum / reviews.length,
       count: reviews.length,
     };
+  }
+
+  // Get user's reviews
+  async getUserReviews(userId: string): Promise<Review[]> {
+    const reviewsRef = collection(db, 'reviews');
+    const q = query(reviewsRef, where('userId', '==', userId));
+    
+    const snapshot = await getDocs(q);
+    const reviews = snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        tmdbId: data.tmdbId,
+        type: data.type,
+        userId: data.userId,
+        userName: data.userName,
+        rating: data.rating,
+        review: data.review,
+        mediaTitle: data.mediaTitle,
+        createdAt: data.createdAt?.toDate() || new Date(),
+        updatedAt: data.updatedAt?.toDate() || new Date(),
+      };
+    });
+    
+    // Sort in memory
+    return reviews.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
   }
 }
 

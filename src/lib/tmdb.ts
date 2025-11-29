@@ -190,6 +190,46 @@ class TMDBService {
     return data;
   }
 
+  async discoverMovies(params: {
+    page?: number;
+    with_genres?: string;
+    sort_by?: string;
+    year?: number;
+  }): Promise<SearchResponse> {
+    const queryParams: Record<string, string> = {
+      page: (params.page || 1).toString(),
+    };
+
+    if (params.with_genres) queryParams.with_genres = params.with_genres;
+    if (params.sort_by) queryParams.sort_by = params.sort_by;
+    if (params.year) queryParams.primary_release_year = params.year.toString();
+
+    return this.fetch<SearchResponse>('/discover/movie', queryParams);
+  }
+
+  async discoverTVShows(params: {
+    page?: number;
+    with_genres?: string;
+    sort_by?: string;
+  }): Promise<SearchResponse> {
+    const queryParams: Record<string, string> = {
+      page: (params.page || 1).toString(),
+    };
+
+    if (params.with_genres) queryParams.with_genres = params.with_genres;
+    if (params.sort_by) queryParams.sort_by = params.sort_by;
+
+    return this.fetch<SearchResponse>('/discover/tv', queryParams);
+  }
+
+  async getMovieGenres(): Promise<{ genres: Array<{ id: number; name: string }> }> {
+    return this.fetch('/genre/movie/list');
+  }
+
+  async getTVGenres(): Promise<{ genres: Array<{ id: number; name: string }> }> {
+    return this.fetch('/genre/tv/list');
+  }
+
   // Cache helpers using localStorage
   private getFromCache(key: string): any | null {
     try {

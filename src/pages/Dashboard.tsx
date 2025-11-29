@@ -1,10 +1,12 @@
 import { SplitText } from '@/components/SplitText';
 import { MovieCard } from '@/components/MovieCard';
-import { TrendingUp, Film, Tv, Star, Search, Loader2, X } from 'lucide-react';
+import { Shuffle, Film, Tv, Star, Search, Loader2, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { usePopularMovies, usePopularTVShows, useSearchMulti } from '@/hooks/useTMDB';
+import { useUserCollections } from '@/hooks/useCollections';
+import { useAuth } from '@/contexts/AuthContext';
 import { tmdbService } from '@/lib/tmdb';
 import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
@@ -18,10 +20,47 @@ const Dashboard = () => {
   const { data: popularMoviesData } = usePopularMovies();
   const { data: popularTVData } = usePopularTVShows();
   const { data: searchData, isLoading: searchLoading } = useSearchMulti(debouncedQuery);
+  const { data: collections } = useUserCollections();
 
   const popularMovies = popularMoviesData?.pages[0]?.results.slice(0, 6) || [];
   const popularTV = popularTVData?.pages[0]?.results.slice(0, 6) || [];
-  const trending = [...popularMovies.slice(0, 3), ...popularTV.slice(0, 3)];
+
+  // Get random items from all collections
+  const [randomCollectionItems, setRandomCollectionItems] = useState<any[]>([]);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const fetchRandomItems = async () => {
+      if (!collections || collections.length === 0 || !user) {
+        setRandomCollectionItems([]);
+        return;
+      }
+
+      try {
+        const { collectionsService } = await import('@/lib/collections');
+        
+        const allItemsPromises = collections.map(async (col) => {
+          const items = await collectionsService.getCollectionItems(user.uid, col.id);
+          return items.map(item => ({
+            ...item,
+            collectionName: col.name
+          }));
+        });
+
+        const allItemsArrays = await Promise.all(allItemsPromises);
+        const allItems = allItemsArrays.flat();
+        
+        // Shuffle and take 6 random items
+        const shuffled = [...allItems].sort(() => Math.random() - 0.5);
+        setRandomCollectionItems(shuffled.slice(0, 6));
+      } catch (error) {
+        console.error('Error fetching collection items:', error);
+        setRandomCollectionItems([]);
+      }
+    };
+
+    fetchRandomItems();
+  }, [collections, user]);
 
   const searchResults = searchData?.pages[0]?.results || [];
   const showSearchResults = debouncedQuery.trim().length > 0;
@@ -143,41 +182,43 @@ const Dashboard = () => {
         )}
       </AnimatePresence>
 
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <TrendingUp className="w-6 h-6 text-primary" />
-            <h2 className="text-3xl font-bold">Trendy</h2>
+      {randomCollectionItems.length > 0 && (
+        <section className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Shuffle className="w-6 h-6 text-primary" />
+              <h2 className="text-3xl font-bold">Z Twoich Kolekcji</h2>
+            </div>
+            <Button 
+              variant="ghost" 
+              onClick={() => navigate('/collections')}
+              className="text-primary hover:text-primary-hover"
+            >
+              Zobacz wszystkie →
+            </Button>
           </div>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {trending.map((item) => {
-            const isMovie = item.media_type === 'movie' || item.title;
-            const title = isMovie ? item.title : item.name;
-            const year = isMovie 
-              ? item.release_date ? new Date(item.release_date).getFullYear() : undefined
-              : item.first_air_date ? new Date(item.first_air_date).getFullYear() : undefined;
-
-            return (
-              <div
-                key={item.id}
-                onClick={() => navigate(isMovie ? `/movie/${item.id}` : `/series/${item.id}`)}
-              >
-                <MovieCard
-                  id={item.id.toString()}
-                  title={title || 'Unknown'}
-                  posterUrl={tmdbService.getImageUrl(item.poster_path)}
-                  year={year}
-                  rating={item.vote_average}
-                  tmdbId={item.id}
-                  type={isMovie ? 'movie' : 'tv'}
-                  posterPath={item.poster_path}
-                />
-              </div>
-            );
-          })}
-        </div>
-      </section>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {randomCollectionItems.map((item) => {
+              const isMovie = item.type === 'movie';
+              return (
+                <div
+                  key={`${item.tmdbId}-${item.type}-${item.id}`}
+                  onClick={() => navigate(isMovie ? `/movie/${item.tmdbId}` : `/series/${item.tmdbId}`)}
+                >
+                  <MovieCard
+                    id={item.tmdbId.toString()}
+                    title={item.title}
+                    posterUrl={tmdbService.getImageUrl(item.posterPath)}
+                    tmdbId={item.tmdbId}
+                    type={item.type}
+                    posterPath={item.posterPath}
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       <section className="space-y-6">
         <div className="flex items-center justify-between">

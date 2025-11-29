@@ -112,3 +112,50 @@ export const useSeasonDetails = (tvId: number, seasonNumber: number) => {
     staleTime: 10 * 60 * 1000,
   });
 };
+
+export const useDiscoverMovies = (params: {
+  with_genres?: string;
+  sort_by?: string;
+  year?: number;
+}) => {
+  return useInfiniteQuery({
+    queryKey: ['tmdb', 'discover', 'movies', params],
+    queryFn: ({ pageParam = 1 }) => tmdbService.discoverMovies({ ...params, page: pageParam }),
+    getNextPageParam: (lastPage) => {
+      return lastPage.page < Math.min(lastPage.total_pages, 5) ? lastPage.page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 60 * 60 * 1000,
+  });
+};
+
+export const useDiscoverTVShows = (params: {
+  with_genres?: string;
+  sort_by?: string;
+}) => {
+  return useInfiniteQuery({
+    queryKey: ['tmdb', 'discover', 'tv', params],
+    queryFn: ({ pageParam = 1 }) => tmdbService.discoverTVShows({ ...params, page: pageParam }),
+    getNextPageParam: (lastPage) => {
+      return lastPage.page < Math.min(lastPage.total_pages, 5) ? lastPage.page + 1 : undefined;
+    },
+    initialPageParam: 1,
+    staleTime: 60 * 60 * 1000,
+  });
+};
+
+export const useMovieGenres = () => {
+  return useQuery({
+    queryKey: ['tmdb', 'genres', 'movies'],
+    queryFn: () => tmdbService.getMovieGenres(),
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+};
+
+export const useTVGenres = () => {
+  return useQuery({
+    queryKey: ['tmdb', 'genres', 'tv'],
+    queryFn: () => tmdbService.getTVGenres(),
+    staleTime: 24 * 60 * 60 * 1000,
+  });
+};

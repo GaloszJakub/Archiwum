@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useSearchTVShows, usePopularTVShows } from '@/hooks/useTMDB';
+import { useSearchTVShows, usePopularTVShows, useDiscoverTVShows, useTVGenres } from '@/hooks/useTMDB';
 import { tmdbService } from '@/lib/tmdb';
 import { useTranslation } from 'react-i18next';
 
@@ -15,10 +15,16 @@ const Series = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [sortBy, setSortBy] = useState('popularity.desc');
   const observerTarget = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  
+  const { data: genresData } = useTVGenres();
 
-  // Use search or popular TV shows
+  const hasFilters = selectedGenre || sortBy !== 'popularity.desc';
+
+  // Use search, discover with filters, or popular TV shows
   const { 
     data: searchData, 
     isLoading: searchLoading, 
@@ -29,6 +35,18 @@ const Series = () => {
   } = useSearchTVShows(debouncedQuery);
   
   const { 
+    data: discoverData, 
+    isLoading: discoverLoading, 
+    error: discoverError,
+    fetchNextPage: fetchNextDiscoverPage,
+    hasNextPage: hasNextDiscoverPage,
+    isFetchingNextPage: isFetchingNextDiscoverPage
+  } = useDiscoverTVShows({
+    with_genres: selectedGenre,
+    sort_by: sortBy,
+  });
+  
+  const { 
     data: popularData, 
     isLoading: popularLoading, 
     error: popularError,
@@ -37,16 +55,18 @@ const Series = () => {
     isFetchingNextPage: isFetchingNextPopularPage
   } = usePopularTVShows();
 
-  // Use search results if query exists, otherwise use popular series
+  // Use search results if query exists, discover if filters, otherwise popular
   const series = debouncedQuery 
     ? (searchData?.pages.flatMap(page => page.results) || [])
+    : hasFilters
+    ? (discoverData?.pages.flatMap(page => page.results) || [])
     : (popularData?.pages.flatMap(page => page.results) || []);
   
-  const isLoading = debouncedQuery ? searchLoading : popularLoading;
-  const error = debouncedQuery ? searchError : popularError;
-  const fetchNextPage = debouncedQuery ? fetchNextSearchPage : fetchNextPopularPage;
-  const hasNextPage = debouncedQuery ? hasNextSearchPage : hasNextPopularPage;
-  const isFetchingNextPage = debouncedQuery ? isFetchingNextSearchPage : isFetchingNextPopularPage;
+  const isLoading = debouncedQuery ? searchLoading : hasFilters ? discoverLoading : popularLoading;
+  const error = debouncedQuery ? searchError : hasFilters ? discoverError : popularError;
+  const fetchNextPage = debouncedQuery ? fetchNextSearchPage : hasFilters ? fetchNextDiscoverPage : fetchNextPopularPage;
+  const hasNextPage = debouncedQuery ? hasNextSearchPage : hasFilters ? hasNextDiscoverPage : hasNextPopularPage;
+  const isFetchingNextPage = debouncedQuery ? isFetchingNextSearchPage : hasFilters ? isFetchingNextDiscoverPage : isFetchingNextPopularPage;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -81,29 +101,131 @@ const Series = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <SplitText 
-          text={t('series.title')}
-          className="text-4xl lg:text-5xl font-bold"
-        />
-        <div className="flex items-center gap-3">
-          <div className="relative w-64 hidden sm:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-secondary" />
-            <Input
-              type="text"
-              placeholder={t('series.search')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-background-secondary border-border"
-            />
-          </div>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <SplitText 
+            text={t('series.title')}
+            className="text-3xl lg:text-5xl font-bold"
+          />
           <Button
             variant="outline"
             size="icon"
             onClick={() => setShowFilters(!showFilters)}
-            className="bg-background-secondary border-border hover:bg-secondary"
+            className="bg-background-secondary border-border hover:bg-secondary shrink-0"
           >
             <SlidersHorizontal className="w-4 h-4" />
+          </Button>
+        </div>
+        
+        {/* Mobile-friendly search bar */}
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-secondary" />
+          <Input
+            type="text"
+            placeholder={t('series.search')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-background-secondary border-border w-full"
+          />
+        </div>
+
+        {/* Quick genre filters */}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <Button
+            variant={selectedGenre === '' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('')}
+            className="shrink-0"
+          >
+            Wszystkie
+          </Button>
+          <Button
+            variant={selectedGenre === '10759' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('10759')}
+            className="shrink-0"
+          >
+            Akcja
+          </Button>
+          <Button
+            variant={selectedGenre === '16' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('16')}
+            className="shrink-0"
+          >
+            Animacja
+          </Button>
+          <Button
+            variant={selectedGenre === '35' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('35')}
+            className="shrink-0"
+          >
+            Komedia
+          </Button>
+          <Button
+            variant={selectedGenre === '80' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('80')}
+            className="shrink-0"
+          >
+            Kryminał
+          </Button>
+          <Button
+            variant={selectedGenre === '99' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('99')}
+            className="shrink-0"
+          >
+            Dokumentalny
+          </Button>
+          <Button
+            variant={selectedGenre === '18' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('18')}
+            className="shrink-0"
+          >
+            Dramat
+          </Button>
+          <Button
+            variant={selectedGenre === '10751' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('10751')}
+            className="shrink-0"
+          >
+            Familijny
+          </Button>
+          <Button
+            variant={selectedGenre === '9648' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('9648')}
+            className="shrink-0"
+          >
+            Horror
+          </Button>
+          <Button
+            variant={selectedGenre === '10765' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('10765')}
+            className="shrink-0"
+          >
+            Sci-Fi
+          </Button>
+          <Button
+            variant={selectedGenre === '10766' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('10766')}
+            className="shrink-0"
+          >
+            Soap Opera
+          </Button>
+          <Button
+            variant={selectedGenre === '10768' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('10768')}
+            className="shrink-0"
+          >
+            Wojenny
           </Button>
         </div>
       </div>
@@ -116,30 +238,33 @@ const Series = () => {
           exit={{ opacity: 0, height: 0 }}
           className="bg-background-secondary rounded-lg p-4 border border-border"
         >
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="text-sm text-foreground-secondary mb-2 block">Gatunek</label>
-              <select className="w-full bg-background border-border rounded-md px-3 py-2 text-sm">
-                <option>Wszystkie</option>
-                <option>Dramat</option>
-                <option>Komedia</option>
-                <option>Thriller</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-sm text-foreground-secondary mb-2 block">Status</label>
-              <select className="w-full bg-background border-border rounded-md px-3 py-2 text-sm">
-                <option>Wszystkie</option>
-                <option>Trwające</option>
-                <option>Zakończone</option>
+              <select 
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                value={selectedGenre}
+                onChange={(e) => setSelectedGenre(e.target.value)}
+              >
+                <option value="">Wszystkie</option>
+                {genresData?.genres.map((genre) => (
+                  <option key={genre.id} value={genre.id.toString()}>
+                    {genre.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
               <label className="text-sm text-foreground-secondary mb-2 block">Sortowanie</label>
-              <select className="w-full bg-background border-border rounded-md px-3 py-2 text-sm">
-                <option>Najnowsze</option>
-                <option>Najlepiej oceniane</option>
-                <option>Alfabetycznie</option>
+              <select 
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="popularity.desc">Najpopularniejsze</option>
+                <option value="vote_average.desc">Najlepiej oceniane</option>
+                <option value="first_air_date.desc">Najnowsze</option>
+                <option value="name.asc">Alfabetycznie A-Z</option>
               </select>
             </div>
           </div>

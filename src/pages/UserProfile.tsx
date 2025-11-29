@@ -1,12 +1,16 @@
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, User as UserIcon, FolderHeart } from 'lucide-react';
+import { ArrowLeft, User as UserIcon, FolderHeart, Star, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { useQuery } from '@tanstack/react-query';
-import { doc, getDoc, collection, getDocs } from 'firebase/firestore';
+import { doc, getDoc, collection, getDocs, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { tmdbService } from '@/lib/tmdb';
 import { MovieCard } from '@/components/MovieCard';
+import { reviewsService, Review } from '@/lib/reviews';
+import { formatDistanceToNow } from 'date-fns';
+import { pl } from 'date-fns/locale';
+import { useEffect, useState } from 'react';
 
 interface UserData {
   displayName: string;
@@ -27,6 +31,38 @@ interface CollectionItem {
   title: string;
   posterPath: string | null;
 }
+
+// Component to fetch and update review title
+const ReviewTitleFetcher = ({ review }: { review: Review }) => {
+  const [title, setTitle] = useState<string>('');
+
+  useEffect(() => {
+    const fetchTitle = async () => {
+      try {
+        if (review.type === 'movie') {
+          const data = await tmdbService.getMovieDetails(review.tmdbId);
+          setTitle(data.title);
+          // Update in Firebase
+          const reviewRef = doc(db, 'reviews', review.id);
+          await updateDoc(reviewRef, { mediaTitle: data.title });
+        } else {
+          const data = await tmdbService.getTVShowDetails(review.tmdbId);
+          setTitle(data.name || '');
+          // Update in Firebase
+          const reviewRef = doc(db, 'reviews', review.id);
+          await updateDoc(reviewRef, { mediaTitle: data.name });
+        }
+      } catch (error) {
+        console.error('Error fetching title:', error);
+        setTitle(`${review.type === 'movie' ? 'Film' : 'Serial'} #${review.tmdbId}`);
+      }
+    };
+
+    fetchTitle();
+  }, [review]);
+
+  return title ? <span className="text-sm text-primary font-medium">{title}</span> : null;
+};
 
 const UserProfile = () => {
   const { userId } = useParams<{ userId: string }>();
@@ -55,22 +91,41 @@ const UserProfile = () => {
       })) as UserCollection[];
     },
     enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
   });
 
-  // Fetch items from first collection for preview
-  const { data: previewItems } = useQuery({
-    queryKey: ['collection-preview', userId, collections?.[0]?.id],
+  // Fetch items from all collections (only first 6 items per collection for preview)
+  const { data: allCollectionItems } = useQuery({
+    queryKey: ['all-collection-items', userId, collections?.map(c => c.id)],
     queryFn: async () => {
-      if (!collections || collections.length === 0) return [];
+      if (!collections || collections.length === 0) return {};
       
-      const itemsRef = collection(db, 'users', userId!, 'collections', collections[0].id, 'items');
-      const snapshot = await getDocs(itemsRef);
-      return snapshot.docs.map((doc) => doc.data()) as CollectionItem[];
+      const itemsMap: Record<string, CollectionItem[]> = {};
+      
+      await Promise.all(
+        collections.map(async (col) => {
+          const itemsRef = collection(db, 'users', userId!, 'collections', col.id, 'items');
+          const snapshot = await getDocs(itemsRef);
+          // Only take first 6 items for preview
+          itemsMap[col.id] = snapshot.docs.slice(0, 6).map((doc) => doc.data()) as CollectionItem[];
+        })
+      );
+      
+      return itemsMap;
     },
     enabled: !!userId && !!collections && collections.length > 0,
+    staleTime: 5 * 60 * 1000,
   });
 
-  if (userLoading || collectionsLoading) {
+  // Fetch user reviews
+  const { data: userReviews } = useQuery({
+    queryKey: ['user-reviews', userId],
+    queryFn: () => reviewsService.getUserReviews(userId!),
+    enabled: !!userId,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (userLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
@@ -116,6 +171,60 @@ const UserProfile = () => {
         </div>
       </div>
 
+      {/* Reviews */}
+      {userReviews && userReviews.length > 0 && (
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <MessageSquare className="w-6 h-6 text-primary" />
+            <h2 className="text-3xl font-bold">Recenzje</h2>
+            <span className="text-foreground-secondary">
+              ({userReviews.length})
+            </span>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {userReviews.map((review) => {
+              // For old reviews without mediaTitle, show loading or fetch from TMDB
+              const displayTitle = review.mediaTitle || 'Ładowanie...';
+              
+              return (
+                <div
+                  key={review.id}
+                  className="bg-background-secondary rounded-xl p-6 space-y-3 cursor-pointer hover:bg-secondary/50 transition-colors"
+                  onClick={() => navigate(review.type === 'movie' ? `/movie/${review.tmdbId}` : `/series/${review.tmdbId}`)}
+                >
+                  <div className="flex items-center gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`w-5 h-5 ${
+                          star <= review.rating
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-400'
+                        }`}
+                      />
+                    ))}
+                    <span className="text-xs text-foreground-secondary ml-2">
+                      {formatDistanceToNow(review.createdAt, { addSuffix: true, locale: pl })}
+                    </span>
+                  </div>
+                  {review.review && (
+                    <p className="text-foreground-secondary line-clamp-3">{review.review}</p>
+                  )}
+                  {review.mediaTitle ? (
+                    <p className="text-sm text-primary font-medium">
+                      {review.mediaTitle}
+                    </p>
+                  ) : (
+                    <ReviewTitleFetcher review={review} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {/* Collections */}
       <div className="space-y-6">
         <div className="flex items-center gap-3">
@@ -140,10 +249,10 @@ const UserProfile = () => {
                   </p>
                 </div>
 
-                {/* Preview items from first collection */}
-                {collection.id === collections[0].id && previewItems && previewItems.length > 0 && (
+                {/* Preview items */}
+                {allCollectionItems?.[collection.id] && allCollectionItems[collection.id].length > 0 && (
                   <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                    {previewItems.slice(0, 6).map((item) => (
+                    {allCollectionItems[collection.id].map((item) => (
                       <div
                         key={`${item.tmdbId}-${item.type}`}
                         onClick={() => navigate(item.type === 'movie' ? `/movie/${item.tmdbId}` : `/series/${item.tmdbId}`)}

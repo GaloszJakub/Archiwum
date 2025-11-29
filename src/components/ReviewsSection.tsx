@@ -10,20 +10,26 @@ import { pl } from 'date-fns/locale';
 interface ReviewsSectionProps {
   tmdbId: number;
   type: 'movie' | 'tv';
+  mediaTitle?: string;
 }
 
-export const ReviewsSection = ({ tmdbId, type }: ReviewsSectionProps) => {
+export const ReviewsSection = ({ tmdbId, type, mediaTitle }: ReviewsSectionProps) => {
   const { user } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [rating, setRating] = useState(0);
   const [hoverRating, setHoverRating] = useState(0);
   const [reviewText, setReviewText] = useState('');
 
-  const { data: reviews } = useReviews(tmdbId, type);
+  const { data: reviews, isLoading: reviewsLoading } = useReviews(tmdbId, type);
   const { data: userReview } = useUserReview(tmdbId, type);
   const { data: averageData } = useAverageRating(tmdbId, type);
   const addReview = useAddReview();
   const deleteReview = useDeleteReview();
+
+  // Debug
+  console.log('Reviews data:', reviews);
+  console.log('User ID:', user?.uid);
+  console.log('Reviews loading:', reviewsLoading);
 
   const handleSubmit = async () => {
     if (rating === 0) {
@@ -37,6 +43,7 @@ export const ReviewsSection = ({ tmdbId, type }: ReviewsSectionProps) => {
         type,
         rating,
         review: reviewText.trim(),
+        mediaTitle,
       });
 
       setIsEditing(false);
@@ -190,33 +197,41 @@ export const ReviewsSection = ({ tmdbId, type }: ReviewsSectionProps) => {
 
       {/* All Reviews */}
       <div className="space-y-4">
-        {reviews && reviews.length > 0 ? (
-          reviews.map((review) => (
-            <div
-              key={review.id}
-              className="border border-border rounded-lg p-4 space-y-2"
-            >
-              <div className="flex items-start justify-between">
-                <div>
-                  <p className="font-semibold">{review.userName}</p>
-                  <div className="flex items-center gap-2 mt-1">
-                    <StarRating value={review.rating} readonly />
-                    <span className="text-xs text-foreground-secondary">
-                      {formatDistanceToNow(review.createdAt, { addSuffix: true, locale: pl })}
-                    </span>
+        <h3 className="text-lg font-semibold">Wszystkie recenzje</h3>
+        {reviewsLoading ? (
+          <p className="text-center text-foreground-secondary py-8">Ładowanie recenzji...</p>
+        ) : (() => {
+          const otherReviews = reviews?.filter((review) => review.userId !== user?.uid) || [];
+          console.log('Other reviews after filter:', otherReviews);
+          
+          return otherReviews.length > 0 ? (
+            otherReviews.map((review) => (
+              <div
+                key={review.id}
+                className="border border-border rounded-lg p-4 space-y-2"
+              >
+                <div className="flex items-start justify-between">
+                  <div>
+                    <p className="font-semibold">{review.userName}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <StarRating value={review.rating} readonly />
+                      <span className="text-xs text-foreground-secondary">
+                        {formatDistanceToNow(review.createdAt, { addSuffix: true, locale: pl })}
+                      </span>
+                    </div>
                   </div>
                 </div>
+                {review.review && (
+                  <p className="text-foreground-secondary">{review.review}</p>
+                )}
               </div>
-              {review.review && (
-                <p className="text-foreground-secondary">{review.review}</p>
-              )}
-            </div>
-          ))
-        ) : (
-          <p className="text-center text-foreground-secondary py-8">
-            Brak recenzji. Bądź pierwszy!
-          </p>
-        )}
+            ))
+          ) : (
+            <p className="text-center text-foreground-secondary py-8">
+              {user ? 'Brak innych recenzji. Bądź pierwszy!' : 'Brak recenzji'}
+            </p>
+          );
+        })()}
       </div>
     </div>
   );

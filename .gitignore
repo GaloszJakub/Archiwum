@@ -45,3 +45,6 @@ backend/scraper/chrome_profile/
 backend/scraper/__pycache__/
 backend/scraper/build/
 backend/scraper/dist/
+
+*.bat
+*.vbs

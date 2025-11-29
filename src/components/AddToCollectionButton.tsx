@@ -101,19 +101,25 @@ export const AddToCollectionButton = ({ tmdbId, type, title, posterPath }: AddTo
                         <button
                           key={collection.id}
                           onClick={() => !isInCollection && handleAddToExisting(collection.id)}
-                          className="w-full text-left p-3 rounded-lg border hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                          disabled={addToCollection.isPending || isInCollection}
+                          className={`w-full text-left p-3 rounded-lg border transition-colors ${
+                            isInCollection 
+                              ? 'bg-green-500/10 border-green-500/30' 
+                              : 'hover:bg-accent'
+                          } ${addToCollection.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          disabled={addToCollection.isPending}
                         >
                           <div className="flex items-center justify-between">
                             <div className="flex-1">
-                              <div className="font-medium">{collection.name}</div>
+                              <div className="font-medium flex items-center gap-2">
+                                {collection.name}
+                                {isInCollection && (
+                                  <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0" />
+                                )}
+                              </div>
                               <div className="text-sm text-muted-foreground">
                                 {collection.itemCount} {collection.itemCount === 1 ? 'element' : 'elementów'}
                               </div>
                             </div>
-                            {isInCollection && (
-                              <CheckCircle2 className="w-5 h-5 text-green-500 shrink-0 ml-2" />
-                            )}
                           </div>
                         </button>
                       );

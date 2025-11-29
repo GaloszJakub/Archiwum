@@ -5,7 +5,16 @@ import { useAuth } from '@/contexts/AuthContext';
 export const useReviews = (tmdbId: number, type: 'movie' | 'tv') => {
   return useQuery({
     queryKey: ['reviews', tmdbId, type],
-    queryFn: () => reviewsService.getReviews(tmdbId, type),
+    queryFn: async () => {
+      try {
+        const result = await reviewsService.getReviews(tmdbId, type);
+        console.log('Reviews fetched:', result);
+        return result;
+      } catch (error) {
+        console.error('Error fetching reviews:', error);
+        throw error;
+      }
+    },
     enabled: !!tmdbId,
     staleTime: 2 * 60 * 1000,
   });
@@ -41,11 +50,13 @@ export const useAddReview = () => {
       type,
       rating,
       review,
+      mediaTitle,
     }: {
       tmdbId: number;
       type: 'movie' | 'tv';
       rating: number;
       review: string;
+      mediaTitle?: string;
     }) =>
       reviewsService.addReview(
         tmdbId,
@@ -53,7 +64,8 @@ export const useAddReview = () => {
         user!.uid,
         user!.displayName || 'Anonim',
         rating,
-        review
+        review,
+        mediaTitle
       ),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['reviews', variables.tmdbId, variables.type] });

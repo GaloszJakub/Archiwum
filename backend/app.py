@@ -15,7 +15,13 @@ from dotenv import load_dotenv
 load_dotenv()
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, resources={
+    r"/api/*": {
+        "origins": "*",
+        "methods": ["GET", "POST", "OPTIONS"],
+        "allow_headers": ["Content-Type"]
+    }
+})
 
 # Konfiguracja
 HEADLESS_MODE = os.getenv('HEADLESS_MODE', 'True').lower() == 'true'

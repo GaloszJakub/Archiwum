@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, SlidersHorizontal, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useSearchMovies, usePopularMovies } from '@/hooks/useTMDB';
+import { useSearchMovies, usePopularMovies, useDiscoverMovies, useMovieGenres } from '@/hooks/useTMDB';
 import { tmdbService } from '@/lib/tmdb';
 import { useTranslation } from 'react-i18next';
 
@@ -15,10 +15,17 @@ const Movies = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [selectedGenre, setSelectedGenre] = useState('');
+  const [selectedYear, setSelectedYear] = useState('');
+  const [sortBy, setSortBy] = useState('popularity.desc');
   const observerTarget = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
+  
+  const { data: genresData } = useMovieGenres();
 
-  // Use search or popular movies
+  const hasFilters = selectedGenre || selectedYear || sortBy !== 'popularity.desc';
+
+  // Use search, discover with filters, or popular movies
   const { 
     data: searchData, 
     isLoading: searchLoading, 
@@ -29,6 +36,19 @@ const Movies = () => {
   } = useSearchMovies(debouncedQuery);
   
   const { 
+    data: discoverData, 
+    isLoading: discoverLoading, 
+    error: discoverError,
+    fetchNextPage: fetchNextDiscoverPage,
+    hasNextPage: hasNextDiscoverPage,
+    isFetchingNextPage: isFetchingNextDiscoverPage
+  } = useDiscoverMovies({
+    with_genres: selectedGenre,
+    sort_by: sortBy,
+    year: selectedYear ? parseInt(selectedYear) : undefined,
+  });
+  
+  const { 
     data: popularData, 
     isLoading: popularLoading, 
     error: popularError,
@@ -37,16 +57,18 @@ const Movies = () => {
     isFetchingNextPage: isFetchingNextPopularPage
   } = usePopularMovies();
 
-  // Use search results if query exists, otherwise use popular movies
+  // Use search results if query exists, discover if filters, otherwise popular
   const movies = debouncedQuery 
     ? (searchData?.pages.flatMap(page => page.results) || [])
+    : hasFilters
+    ? (discoverData?.pages.flatMap(page => page.results) || [])
     : (popularData?.pages.flatMap(page => page.results) || []);
   
-  const isLoading = debouncedQuery ? searchLoading : popularLoading;
-  const error = debouncedQuery ? searchError : popularError;
-  const fetchNextPage = debouncedQuery ? fetchNextSearchPage : fetchNextPopularPage;
-  const hasNextPage = debouncedQuery ? hasNextSearchPage : hasNextPopularPage;
-  const isFetchingNextPage = debouncedQuery ? isFetchingNextSearchPage : isFetchingNextPopularPage;
+  const isLoading = debouncedQuery ? searchLoading : hasFilters ? discoverLoading : popularLoading;
+  const error = debouncedQuery ? searchError : hasFilters ? discoverError : popularError;
+  const fetchNextPage = debouncedQuery ? fetchNextSearchPage : hasFilters ? fetchNextDiscoverPage : fetchNextPopularPage;
+  const hasNextPage = debouncedQuery ? hasNextSearchPage : hasFilters ? hasNextDiscoverPage : hasNextPopularPage;
+  const isFetchingNextPage = debouncedQuery ? isFetchingNextSearchPage : hasFilters ? isFetchingNextDiscoverPage : isFetchingNextPopularPage;
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -81,29 +103,139 @@ const Movies = () => {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <SplitText 
-          text={t('movies.title')}
-          className="text-4xl lg:text-5xl font-bold"
-        />
-        <div className="flex items-center gap-3">
-          <div className="relative w-64 hidden sm:block">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-secondary" />
-            <Input
-              type="text"
-              placeholder={t('movies.search')}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10 bg-background-secondary border-border"
-            />
-          </div>
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <SplitText 
+            text={t('movies.title')}
+            className="text-3xl lg:text-5xl font-bold"
+          />
           <Button
             variant="outline"
             size="icon"
             onClick={() => setShowFilters(!showFilters)}
-            className="bg-background-secondary border-border hover:bg-secondary"
+            className="bg-background-secondary border-border hover:bg-secondary shrink-0"
           >
             <SlidersHorizontal className="w-4 h-4" />
+          </Button>
+        </div>
+        
+        {/* Mobile-friendly search bar */}
+        <div className="relative w-full">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-secondary" />
+          <Input
+            type="text"
+            placeholder={t('movies.search')}
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-10 bg-background-secondary border-border w-full"
+          />
+        </div>
+
+        {/* Quick genre filters */}
+        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+          <Button
+            variant={selectedGenre === '' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('')}
+            className="shrink-0"
+          >
+            Wszystkie
+          </Button>
+          <Button
+            variant={selectedGenre === '28' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('28')}
+            className="shrink-0"
+          >
+            Akcja
+          </Button>
+          <Button
+            variant={selectedGenre === '12' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('12')}
+            className="shrink-0"
+          >
+            Przygodowy
+          </Button>
+          <Button
+            variant={selectedGenre === '16' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('16')}
+            className="shrink-0"
+          >
+            Animacja
+          </Button>
+          <Button
+            variant={selectedGenre === '35' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('35')}
+            className="shrink-0"
+          >
+            Komedia
+          </Button>
+          <Button
+            variant={selectedGenre === '80' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('80')}
+            className="shrink-0"
+          >
+            Kryminał
+          </Button>
+          <Button
+            variant={selectedGenre === '18' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('18')}
+            className="shrink-0"
+          >
+            Dramat
+          </Button>
+          <Button
+            variant={selectedGenre === '14' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('14')}
+            className="shrink-0"
+          >
+            Fantasy
+          </Button>
+          <Button
+            variant={selectedGenre === '27' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('27')}
+            className="shrink-0"
+          >
+            Horror
+          </Button>
+          <Button
+            variant={selectedGenre === '10749' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('10749')}
+            className="shrink-0"
+          >
+            Romans
+          </Button>
+          <Button
+            variant={selectedGenre === '878' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('878')}
+            className="shrink-0"
+          >
+            Sci-Fi
+          </Button>
+          <Button
+            variant={selectedGenre === '53' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('53')}
+            className="shrink-0"
+          >
+            Thriller
+          </Button>
+          <Button
+            variant={selectedGenre === '10752' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setSelectedGenre('10752')}
+            className="shrink-0"
+          >
+            Wojenny
           </Button>
         </div>
       </div>
@@ -118,29 +250,46 @@ const Movies = () => {
         >
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <label className="text-sm text-foreground-secondary mb-2 block">{t('common.genre')}</label>
-              <select className="w-full bg-background border-border rounded-md px-3 py-2 text-sm">
-                <option>{t('common.all')}</option>
-                <option>Akcja</option>
-                <option>Sci-Fi</option>
-                <option>Dramat</option>
+              <label className="text-sm text-foreground-secondary mb-2 block">Gatunek</label>
+              <select 
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                value={selectedGenre}
+                onChange={(e) => setSelectedGenre(e.target.value)}
+              >
+                <option value="">Wszystkie</option>
+                {genresData?.genres.map((genre) => (
+                  <option key={genre.id} value={genre.id.toString()}>
+                    {genre.name}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="text-sm text-foreground-secondary mb-2 block">{t('common.year')}</label>
-              <select className="w-full bg-background border-border rounded-md px-3 py-2 text-sm">
-                <option>{t('common.all')}</option>
-                <option>2024</option>
-                <option>2023</option>
-                <option>2022</option>
+              <label className="text-sm text-foreground-secondary mb-2 block">Rok</label>
+              <select 
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                value={selectedYear}
+                onChange={(e) => setSelectedYear(e.target.value)}
+              >
+                <option value="">Wszystkie</option>
+                {Array.from({ length: 10 }, (_, i) => new Date().getFullYear() - i).map((year) => (
+                  <option key={year} value={year.toString()}>
+                    {year}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
-              <label className="text-sm text-foreground-secondary mb-2 block">{t('common.sort')}</label>
-              <select className="w-full bg-background border-border rounded-md px-3 py-2 text-sm">
-                <option>Najnowsze</option>
-                <option>Najlepiej oceniane</option>
-                <option>Alfabetycznie</option>
+              <label className="text-sm text-foreground-secondary mb-2 block">Sortowanie</label>
+              <select 
+                className="w-full bg-background border border-border rounded-md px-3 py-2 text-sm text-foreground"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="popularity.desc">Najpopularniejsze</option>
+                <option value="vote_average.desc">Najlepiej oceniane</option>
+                <option value="release_date.desc">Najnowsze</option>
+                <option value="title.asc">Alfabetycznie A-Z</option>
               </select>
             </div>
           </div>

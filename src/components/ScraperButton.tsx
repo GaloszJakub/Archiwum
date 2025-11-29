@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button } from './ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
 import { Checkbox } from './ui/checkbox';
+import { Input } from './ui/input';
 import { Search, Loader2, Download, CheckCircle2, XCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
@@ -32,21 +33,26 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
   const [episodes, setEpisodes] = useState<Episode[]>([]);
   const [selectedEpisodes, setSelectedEpisodes] = useState<Set<string>>(new Set());
   const [seasons, setSeasons] = useState<string[]>([]);
+  const [showManualSearch, setShowManualSearch] = useState(false);
+  const [manualTitle, setManualTitle] = useState('');
 
-  // Scraper is available for admins (works via ngrok tunnel)
+  // Scraper is available for admins (works via Tailscale Funnel)
   if (!isAdmin) return null;
 
-  const API_URL = import.meta.env.VITE_SCRAPER_API_URL || 'https://subcaecal-taunya-tally.ngrok-free.dev/api';
+  const API_URL = import.meta.env.VITE_SCRAPER_API_URL || 'http://localhost:5001/api';
 
-  const handleSearch = async () => {
+  const handleSearch = async (customTitle?: string) => {
     setIsSearching(true);
+    const searchTitle = customTitle || title;
     
     try {
       const response = await fetch(`${API_URL}/scrape/search`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
-          title: title,
+          title: searchTitle,
           type: type === 'series' ? 'serial' : 'film',
           year: year
         })
@@ -54,7 +60,7 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
 
       const data = await response.json();
 
-      if (data.success) {
+      if (data.success && data.episodes && data.episodes.length > 0) {
         setEpisodes(data.episodes || []);
         
         if (type === 'series') {
@@ -67,15 +73,26 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
         }
         
         setIsOpen(true);
+        setShowManualSearch(false);
         toast.success(`Znaleziono ${data.episodes.length} odcinków`, {
           description: 'Wybierz odcinki do pobrania linków',
           icon: <CheckCircle2 className="w-5 h-5" />,
         });
       } else {
-        toast.error('Nie udało się wyszukać', {
-          description: data.error || 'Sprawdź czy backend działa',
-          icon: <XCircle className="w-5 h-5" />,
-        });
+        // Nie znaleziono wyników - pokaż dialog ręcznego wyszukiwania
+        if (!customTitle) {
+          setShowManualSearch(true);
+          setManualTitle(title);
+          toast.warning('Nie znaleziono wyników', {
+            description: 'Spróbuj wpisać tytuł ręcznie',
+            icon: <AlertCircle className="w-5 h-5" />,
+          });
+        } else {
+          toast.error('Nie znaleziono wyników', {
+            description: 'Spróbuj innego tytułu',
+            icon: <XCircle className="w-5 h-5" />,
+          });
+        }
       }
     } catch (error) {
       console.error('Search error:', error);
@@ -86,6 +103,12 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
       });
     } finally {
       setIsSearching(false);
+    }
+  };
+
+  const handleManualSearch = () => {
+    if (manualTitle.trim()) {
+      handleSearch(manualTitle.trim());
     }
   };
 
@@ -135,7 +158,9 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
       // Wywołaj scraper
       const response = await fetch(`${API_URL}/scrape/links`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           episodes: episodesToScrape
         })
@@ -242,7 +267,7 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
   return (
     <>
       <Button
-        onClick={handleSearch}
+        onClick={() => handleSearch()}
         disabled={isSearching}
         variant="outline"
         size="sm"
@@ -260,6 +285,55 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
         )}
       </Button>
 
+      {/* Manual Search Dialog */}
+      <Dialog open={showManualSearch} onOpenChange={setShowManualSearch}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Wpisz tytuł ręcznie</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              Nie znaleziono wyników dla "{title}". Spróbuj wpisać tytuł w innej formie.
+            </p>
+            <Input
+              value={manualTitle}
+              onChange={(e) => setManualTitle(e.target.value)}
+              placeholder="Wpisz tytuł..."
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  handleManualSearch();
+                }
+              }}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button
+                variant="outline"
+                onClick={() => setShowManualSearch(false)}
+              >
+                Anuluj
+              </Button>
+              <Button
+                onClick={handleManualSearch}
+                disabled={isSearching || !manualTitle.trim()}
+              >
+                {isSearching ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Szukam...
+                  </>
+                ) : (
+                  <>
+                    <Search className="mr-2 h-4 w-4" />
+                    Szukaj
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Episodes Selection Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
         <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
           <DialogHeader className="flex-shrink-0">

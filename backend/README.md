@@ -18,7 +18,11 @@ Zobacz: **[QUICKSTART.md](QUICKSTART.md)** - 5-minutowy przewodnik
 
 | Plik | Opis |
 |------|------|
-| **[QUICKSTART.md](QUICKSTART.md)** | 5-minutowy przewodnik wdrożenia |
+| **[TAILSCALE_SETUP.md](TAILSCALE_SETUP.md)** | 🚀 Setup Tailscale Funnel - stały publiczny URL |
+| **[QUICK_START_CLOUDFLARE.md](QUICK_START_CLOUDFLARE.md)** | ⚡ (Przestarzałe) 5-minutowy start z Cloudflare Tunnel |
+| **[CLOUDFLARE_TUNNEL_SETUP.md](CLOUDFLARE_TUNNEL_SETUP.md)** | 🔧 (Przestarzałe) Pełna dokumentacja Cloudflare Tunnel |
+| **[MIGRATION_NGROK_TO_CLOUDFLARE.md](MIGRATION_NGROK_TO_CLOUDFLARE.md)** | 🔄 (Przestarzałe) Migracja z ngrok na Cloudflare |
+| **[QUICKSTART.md](QUICKSTART.md)** | 5-minutowy przewodnik wdrożenia cloud |
 | **[CLOUD_DEPLOYMENT.md](CLOUD_DEPLOYMENT.md)** | Szczegółowa instrukcja cloud deployment |
 | **[README_CLOUD.md](README_CLOUD.md)** | Dokumentacja zmian cloud-ready |
 | **[CHANGES.md](CHANGES.md)** | Changelog refaktoryzacji |

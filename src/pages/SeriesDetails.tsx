@@ -258,7 +258,7 @@ const SeriesDetails = () => {
         })()}
 
         {/* Reviews */}
-        <ReviewsSection tmdbId={data.id} type="tv" />
+        <ReviewsSection tmdbId={data.id} type="tv" mediaTitle={data.name} />
       </div>
     </motion.div>
   );

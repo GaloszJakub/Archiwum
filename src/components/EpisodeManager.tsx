@@ -12,6 +12,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -44,6 +54,10 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
   const [language, setLanguage] = useState('PL');
   const [playerOpen, setPlayerOpen] = useState(false);
   const [currentPlayerUrl, setCurrentPlayerUrl] = useState('');
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [linkToDelete, setLinkToDelete] = useState<{ episodeNumber: number; linkIndex: number } | null>(null);
+  const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
+  const [episodeToDelete, setEpisodeToDelete] = useState<number | null>(null);
 
   const { data: episodes, isLoading } = useSeasonEpisodes(tmdbId, seasonNumber);
   const { data: seasonDetails } = useSeasonDetails(tmdbId, seasonNumber);
@@ -112,69 +126,91 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
     }
   };
 
-  const handleDelete = async (episodeNumber: number) => {
-    if (!confirm('Czy na pewno chcesz usunąć wszystkie linki tego odcinka?')) return;
-
-    try {
-      await deleteEpisodeLink.mutateAsync({
-        tmdbId,
-        seasonNumber,
-        episodeNumber,
-      });
-      toast.success(t('common.success'));
-    } catch (error) {
-      console.error('Error deleting episode link:', error);
-      toast.error(t('common.error'));
-    }
+  const handleDelete = (episodeNumber: number) => {
+    setEpisodeToDelete(episodeNumber);
+    setDeleteAllDialogOpen(true);
   };
 
-  const handleDeleteLink = async (episodeNumber: number, linkIndex: number) => {
+  const confirmDeleteAll = async () => {
+    if (episodeToDelete === null) return;
+
+    setDeleteAllDialogOpen(false);
+    const episodeNum = episodeToDelete;
+    setEpisodeToDelete(null);
+
+    toast.promise(
+      deleteEpisodeLink.mutateAsync({
+        tmdbId,
+        seasonNumber,
+        episodeNumber: episodeNum,
+      }),
+      {
+        loading: 'Usuwanie wszystkich linków...',
+        success: 'Wszystkie linki usunięte',
+        error: 'Błąd podczas usuwania',
+      }
+    );
+  };
+
+  const handleDeleteLink = (episodeNumber: number, linkIndex: number) => {
+    setLinkToDelete({ episodeNumber, linkIndex });
+    setDeleteDialogOpen(true);
+  };
+
+  const confirmDeleteLink = async () => {
+    if (!linkToDelete) return;
+    
+    const { episodeNumber, linkIndex } = linkToDelete;
     const episode = episodesMap.get(episodeNumber);
     if (!episode || !episode.links) return;
 
-    if (!confirm('Czy na pewno chcesz usunąć ten link?')) return;
+    setDeleteDialogOpen(false);
+    setLinkToDelete(null);
 
-    try {
-      // Usuń link z array
-      const updatedLinks = episode.links.filter((_, idx) => idx !== linkIndex);
-      
-      // Jeśli to był ostatni link, usuń cały dokument
-      if (updatedLinks.length === 0) {
+    toast.promise(
+      (async () => {
+        // Usuń link z array
+        const updatedLinks = episode.links!.filter((_, idx) => idx !== linkIndex);
+        
+        // Jeśli to był ostatni link, usuń cały dokument
+        if (updatedLinks.length === 0) {
+          await deleteEpisodeLink.mutateAsync({
+            tmdbId,
+            seasonNumber,
+            episodeNumber,
+          });
+          return;
+        }
+
+        // Zaktualizuj dokument z nową listą linków
+        const episodeId = `${tmdbId}_s${seasonNumber}_e${episodeNumber}`;
+        const episodeRef = doc(db, 'episodes', episodeId);
+        
+        // Zaktualizuj główny link na pierwszy z pozostałych
+        const mainLink = updatedLinks[0];
+        
+        await setDoc(episodeRef, {
+          ...episode,
+          link: mainLink.url,
+          quality: mainLink.quality || '720p',
+          language: mainLink.version || 'PL',
+          links: updatedLinks,
+          updatedAt: new Date(),
+        }, { merge: true });
+
+        // Odśwież dane
         await deleteEpisodeLink.mutateAsync({
           tmdbId,
           seasonNumber,
           episodeNumber,
         });
-        return;
+      })(),
+      {
+        loading: 'Usuwanie linku...',
+        success: 'Link usunięty',
+        error: 'Błąd podczas usuwania linku',
       }
-
-      // Zaktualizuj dokument z nową listą linków
-      const episodeId = `${tmdbId}_s${seasonNumber}_e${episodeNumber}`;
-      const episodeRef = doc(db, 'episodes', episodeId);
-      
-      // Zaktualizuj główny link na pierwszy z pozostałych
-      const mainLink = updatedLinks[0];
-      
-      await setDoc(episodeRef, {
-        ...episode,
-        link: mainLink.url,
-        quality: mainLink.quality || '720p',
-        language: mainLink.version || 'PL',
-        links: updatedLinks,
-        updatedAt: new Date(),
-      }, { merge: true });
-
-      // Odśwież dane
-      await deleteEpisodeLink.mutateAsync({
-        tmdbId,
-        seasonNumber,
-        episodeNumber,
-      });
-      toast.success('Link usunięty');
-    } catch (error) {
-      console.error('Error deleting link:', error);
-      toast.error('Błąd podczas usuwania linku');
-    }
+    );
   };
 
   const episodeOptions = Array.from({ length: episodeCount }, (_, i) => i + 1);
@@ -292,7 +328,7 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
               <div className="flex items-start justify-between mb-2">
                 <div className="flex-1">
                   <h4 className="font-semibold">Odcinek {episode.episodeNumber}</h4>
-                  {episode.title && (
+                  {episode.title && episode.title !== `Odcinek ${episode.episodeNumber}` && (
                     <p className="text-sm text-foreground-secondary line-clamp-1 mt-0.5">
                       {episode.title}
                     </p>
@@ -405,6 +441,38 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Delete Single Link Dialog */}
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć link?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz usunąć ten link? Ta operacja jest nieodwracalna.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteLink}>Usuń</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete All Links Dialog */}
+      <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć wszystkie linki?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz usunąć wszystkie linki tego odcinka? Ta operacja jest nieodwracalna.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteAll}>Usuń wszystkie</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
