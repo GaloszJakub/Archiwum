@@ -1,7 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Film, Tv, FolderHeart, User, Shield, LogOut, Menu, X, Users } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useState, useEffect } from 'react';
+import { Home, Film, Tv, FolderHeart, User, Shield, LogOut, Users } from 'lucide-react';
+import { motion } from 'framer-motion';
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
@@ -11,7 +11,6 @@ export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { isAdmin, signOut } = useAuth();
   const { t } = useTranslation();
 
@@ -33,143 +32,76 @@ export const Sidebar = () => {
     try {
       await signOut();
       navigate('/login');
-      setMobileMenuOpen(false);
     } catch (error) {
       console.error('Error signing out:', error);
     }
   };
 
-  const handleNavClick = () => {
-    setMobileMenuOpen(false);
-  };
-
-  // Prevent body scroll when mobile menu is open
-  useEffect(() => {
-    if (mobileMenuOpen) {
-      document.body.classList.add('mobile-menu-open');
-    } else {
-      document.body.classList.remove('mobile-menu-open');
-    }
-    return () => {
-      document.body.classList.remove('mobile-menu-open');
-    };
-  }, [mobileMenuOpen]);
-
-  // Close mobile menu on route change
-  useEffect(() => {
-    setMobileMenuOpen(false);
-  }, [location.pathname]);
-
   return (
-    <>
-      {/* Mobile Hamburger Button - Hidden when menu is open */}
-      {!mobileMenuOpen && (
-        <button
-          onClick={() => setMobileMenuOpen(true)}
-          className="fixed top-4 left-4 z-50 lg:hidden w-10 h-10 rounded-lg bg-background-secondary border border-border flex items-center justify-center hover:bg-secondary transition-colors shadow-lg"
-          aria-label="Open menu"
+    <aside className="hidden lg:flex flex-col fixed left-0 top-0 z-40 h-screen w-64 bg-background-secondary border-r border-border">
+      {/* Logo */}
+      <div className="flex items-center h-16 px-6 border-b border-border">
+        <Link to="/" className="flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
+            <Film className="w-5 h-5 text-primary-foreground" />
+          </div>
+          <span className="text-xl font-bold">Archiwum</span>
+        </Link>
+      </div>
+
+      {/* Navigation */}
+      <nav className="flex-1 py-8 overflow-y-auto">
+        <ul className="space-y-2 px-4">
+          {allNavItems.map((item) => {
+            const isActive = location.pathname === item.path;
+            const Icon = item.icon;
+
+            return (
+              <li key={item.path}>
+                <MagneticLink
+                  to={item.path}
+                  isActive={isActive}
+                  isHovered={hoveredItem === item.path}
+                  onHoverStart={() => setHoveredItem(item.path)}
+                  onHoverEnd={() => setHoveredItem(null)}
+                  onClick={() => { }}
+                >
+                  <Icon className="w-5 h-5 shrink-0" />
+                  <span>{item.label}</span>
+                </MagneticLink>
+              </li>
+            );
+          })}
+        </ul>
+      </nav>
+
+      {/* Friends Button */}
+      <div className="p-4 border-t border-border">
+        <Button
+          variant="ghost"
+          onClick={() => {
+            const event = new CustomEvent('openFriendsSidebar');
+            window.dispatchEvent(event);
+          }}
+          className="w-full justify-start gap-3 text-foreground-secondary hover:text-primary hover:bg-secondary/50"
         >
-          <Menu className="w-5 h-5 text-foreground" />
-        </button>
-      )}
+          <Users className="w-5 h-5 shrink-0" />
+          <span>Znajomi</span>
+        </Button>
+      </div>
 
-      {/* Mobile Overlay */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="fixed inset-0 bg-black/60 z-40 lg:hidden"
-            onClick={() => setMobileMenuOpen(false)}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* Sidebar */}
-      <aside
-        className={cn(
-          "fixed left-0 top-0 z-40 h-screen bg-background-secondary border-r border-border transition-transform duration-300 ease-in-out",
-          "lg:translate-x-0 lg:w-64",
-          mobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full lg:translate-x-0"
-        )}
-      >
-        <div className="flex flex-col h-full">
-          {/* Logo with Close Button */}
-          <div className="flex items-center justify-between h-16 px-4 lg:px-6 border-b border-border">
-            <Link to="/" className="flex items-center gap-3" onClick={handleNavClick}>
-              <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-                <Film className="w-5 h-5 text-primary-foreground" />
-              </div>
-              <span className="text-xl font-bold">Archiwum</span>
-            </Link>
-            
-            {/* Close button - visible only on mobile when menu is open */}
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="lg:hidden w-8 h-8 rounded-lg hover:bg-secondary flex items-center justify-center transition-colors"
-              aria-label="Close menu"
-            >
-              <X className="w-5 h-5 text-foreground-secondary" />
-            </button>
-          </div>
-
-          {/* Navigation */}
-          <nav className="flex-1 py-8 overflow-y-auto">
-            <ul className="space-y-2 px-4">
-              {allNavItems.map((item) => {
-                const isActive = location.pathname === item.path;
-                const Icon = item.icon;
-
-                return (
-                  <li key={item.path}>
-                    <MagneticLink
-                      to={item.path}
-                      isActive={isActive}
-                      isHovered={hoveredItem === item.path}
-                      onHoverStart={() => setHoveredItem(item.path)}
-                      onHoverEnd={() => setHoveredItem(null)}
-                      onClick={handleNavClick}
-                    >
-                      <Icon className="w-5 h-5 shrink-0" />
-                      <span>{item.label}</span>
-                    </MagneticLink>
-                  </li>
-                );
-              })}
-            </ul>
-          </nav>
-
-          {/* Friends Button */}
-          <div className="p-4 border-t border-border">
-            <Button
-              variant="ghost"
-              onClick={() => {
-                const event = new CustomEvent('openFriendsSidebar');
-                window.dispatchEvent(event);
-              }}
-              className="w-full justify-start gap-3 text-foreground-secondary hover:text-primary hover:bg-secondary/50"
-            >
-              <Users className="w-5 h-5 shrink-0" />
-              <span>Znajomi</span>
-            </Button>
-          </div>
-
-          {/* Logout Button */}
-          <div className="px-4 pb-4">
-            <Button
-              variant="ghost"
-              onClick={handleSignOut}
-              className="w-full justify-start gap-3 text-foreground-secondary hover:text-destructive hover:bg-destructive/10"
-            >
-              <LogOut className="w-5 h-5 shrink-0" />
-              <span>Wyloguj</span>
-            </Button>
-          </div>
-        </div>
-      </aside>
-    </>
+      {/* Logout Button */}
+      <div className="px-4 pb-4">
+        <Button
+          variant="ghost"
+          onClick={handleSignOut}
+          className="w-full justify-start gap-3 text-foreground-secondary hover:text-destructive hover:bg-destructive/10"
+        >
+          <LogOut className="w-5 h-5 shrink-0" />
+          <span>Wyloguj</span>
+        </Button>
+      </div>
+    </aside>
   );
 };
 
@@ -192,7 +124,7 @@ const MagneticLink = ({ to, isActive, isHovered, onHoverStart, onHoverEnd, onCli
     const centerY = rect.top + rect.height / 2;
     const distanceX = e.clientX - centerX;
     const distanceY = e.clientY - centerY;
-    
+
     setPosition({
       x: distanceX * 0.3,
       y: distanceY * 0.3,
@@ -213,8 +145,8 @@ const MagneticLink = ({ to, isActive, isHovered, onHoverStart, onHoverEnd, onCli
       onMouseLeave={handleMouseLeave}
       className={cn(
         "relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 touch-manipulation",
-        isActive 
-          ? "bg-primary text-primary-foreground" 
+        isActive
+          ? "bg-primary text-primary-foreground"
           : "text-foreground-secondary hover:bg-secondary hover:text-foreground"
       )}
     >

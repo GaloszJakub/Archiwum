@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ProtectedPage } from "@/components/ProtectedPage";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import Dashboard from "./pages/Dashboard";
 import Movies from "./pages/Movies";
 import Series from "./pages/Series";
@@ -28,11 +29,12 @@ const App = () => {
         <TooltipProvider>
           <Toaster />
           <Sonner />
-          <BrowserRouter>
+          <BrowserRouter basename={import.meta.env.BASE_URL}>
             <ScrollToTop />
+            <InstallPrompt />
             <Routes>
               <Route path="/login" element={<Login />} />
-              
+
               <Route path="/" element={<ProtectedPage><Dashboard /></ProtectedPage>} />
               <Route path="/movies" element={<ProtectedPage><Movies /></ProtectedPage>} />
               <Route path="/series" element={<ProtectedPage><Series /></ProtectedPage>} />
@@ -43,7 +45,7 @@ const App = () => {
               <Route path="/admin/users" element={<ProtectedPage><AdminUsers /></ProtectedPage>} />
               <Route path="/profile/:userId" element={<ProtectedPage><UserProfile /></ProtectedPage>} />
               <Route path="/profile" element={<ProtectedPage><Profile /></ProtectedPage>} />
-              
+
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>

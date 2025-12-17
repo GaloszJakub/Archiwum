@@ -1,6 +1,6 @@
 import { SplitText } from '@/components/SplitText';
 import { MovieCard } from '@/components/MovieCard';
-import { Shuffle, Film, Tv, Star, Search, Loader2, X } from 'lucide-react';
+import { Shuffle, Film, Tv, Star, Search, Loader2, X, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
@@ -38,7 +38,7 @@ const Dashboard = () => {
 
       try {
         const { collectionsService } = await import('@/lib/collections');
-        
+
         const allItemsPromises = collections.map(async (col) => {
           const items = await collectionsService.getCollectionItems(user.uid, col.id);
           return items.map(item => ({
@@ -49,7 +49,7 @@ const Dashboard = () => {
 
         const allItemsArrays = await Promise.all(allItemsPromises);
         const allItems = allItemsArrays.flat();
-        
+
         // Shuffle and take 6 random items
         const shuffled = [...allItems].sort(() => Math.random() - 0.5);
         setRandomCollectionItems(shuffled.slice(0, 6));
@@ -84,37 +84,55 @@ const Dashboard = () => {
 
   return (
     <div className="space-y-12">
-      <div className="text-center space-y-4">
-        <SplitText 
-          text={t('nav.dashboard')}
-          className="text-5xl lg:text-6xl font-bold"
-        />
-        <p className="text-xl text-foreground-secondary max-w-2xl mx-auto">
-          {t('dashboard.recommendations')}
-        </p>
-        
-        {/* Search Bar */}
-        <form onSubmit={handleSearch} className="max-w-2xl mx-auto mt-6">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <Input
-              type="text"
-              placeholder="Szukaj filmów i seriali..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 pr-12 py-6 text-lg bg-background-secondary border-border"
+      <div className="space-y-2">
+        {/* Mobile Profile Icon */}
+
+
+        <div className="text-center space-y-4">
+          <div className="relative flex items-center justify-center">
+            <SplitText
+              text={t('nav.dashboard')}
+              className="text-5xl lg:text-6xl font-bold"
             />
-            {searchQuery && (
-              <button
-                type="button"
-                onClick={clearSearch}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+            <div className="lg:hidden absolute right-2 top-1/2 -translate-y-1/2 scale-150">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => navigate('/profile')}
+                className="rounded-full w-12 h-12"
               >
-                <X className="w-5 h-5" />
-              </button>
-            )}
+                <User className="w-8 h-8" />
+              </Button>
+            </div>
           </div>
-        </form>
+
+          <p className="text-xl text-foreground-secondary max-w-2xl mx-auto">
+            {t('dashboard.recommendations')}
+          </p>
+
+          {/* Search Bar */}
+          <form onSubmit={handleSearch} className="max-w-2xl mx-auto mt-6">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Input
+                type="text"
+                placeholder="Szukaj filmów i seriali..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-12 pr-12 py-6 text-lg bg-background-secondary border-border"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={clearSearch}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              )}
+            </div>
+          </form>
+        </div>
       </div>
 
       {/* Search Results */}
@@ -154,7 +172,7 @@ const Dashboard = () => {
                 {searchResults.map((item: any) => {
                   const isMovie = item.media_type === 'movie';
                   const title = isMovie ? item.title : item.name;
-                  const year = isMovie 
+                  const year = isMovie
                     ? item.release_date ? new Date(item.release_date).getFullYear() : undefined
                     : item.first_air_date ? new Date(item.first_air_date).getFullYear() : undefined;
 
@@ -189,8 +207,8 @@ const Dashboard = () => {
               <Shuffle className="w-6 h-6 text-primary" />
               <h2 className="text-3xl font-bold">Z Twoich Kolekcji</h2>
             </div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => navigate('/collections')}
               className="text-primary hover:text-primary-hover"
             >
@@ -226,8 +244,8 @@ const Dashboard = () => {
             <Film className="w-6 h-6 text-primary" />
             <h2 className="text-3xl font-bold">{t('movies.popular')}</h2>
           </div>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => navigate('/movies')}
             className="text-primary hover:text-primary-hover"
           >
@@ -261,8 +279,8 @@ const Dashboard = () => {
             <Tv className="w-6 h-6 text-primary" />
             <h2 className="text-3xl font-bold">{t('series.popular')}</h2>
           </div>
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             onClick={() => navigate('/series')}
             className="text-primary hover:text-primary-hover"
           >

@@ -1,5 +1,6 @@
 import { ReactNode, useState, useEffect } from 'react';
 import { Sidebar } from './Sidebar';
+import { MobileNav } from './MobileNav';
 import { FriendsSidebar } from '../FriendsSidebar';
 import { useSmoothScroll } from '@/lib/smoothScroll';
 
@@ -25,13 +26,14 @@ export const AppLayout = ({ children }: AppLayoutProps) => {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 lg:ml-64 p-4 pt-16 lg:pt-8 lg:p-8 w-full overflow-x-hidden">
+      <MobileNav />
+      <main className="flex-1 lg:ml-64 p-4 pb-24 pt-8 lg:p-8 w-full overflow-x-hidden">
         {children}
       </main>
 
-      <FriendsSidebar 
-        isOpen={friendsSidebarOpen} 
-        onClose={() => setFriendsSidebarOpen(false)} 
+      <FriendsSidebar
+        isOpen={friendsSidebarOpen}
+        onClose={() => setFriendsSidebarOpen(false)}
       />
     </div>
   );
