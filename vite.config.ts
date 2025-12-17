@@ -5,7 +5,7 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: "/Archiwum/",
+  base: "/",
   server: {
     host: "::",
     port: 3000,
@@ -24,8 +24,8 @@ export default defineConfig(({ mode }) => ({
         background_color: "#0f0f0f",
         display: "standalone",
         orientation: "portrait-primary",
-        start_url: "/Archiwum/",
-        scope: "/Archiwum/",
+        start_url: "/",
+        scope: "/",
         icons: [
           {
             src: "android-chrome-192x192.png",
