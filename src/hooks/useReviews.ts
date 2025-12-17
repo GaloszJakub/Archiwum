@@ -8,7 +8,6 @@ export const useReviews = (tmdbId: number, type: 'movie' | 'tv') => {
     queryFn: async () => {
       try {
         const result = await reviewsService.getReviews(tmdbId, type);
-        console.log('Reviews fetched:', result);
         return result;
       } catch (error) {
         console.error('Error fetching reviews:', error);
@@ -22,7 +21,7 @@ export const useReviews = (tmdbId: number, type: 'movie' | 'tv') => {
 
 export const useUserReview = (tmdbId: number, type: 'movie' | 'tv') => {
   const { user } = useAuth();
-  
+
   return useQuery({
     queryKey: ['user-review', tmdbId, type, user?.uid],
     queryFn: () => reviewsService.getUserReview(tmdbId, type, user!.uid),

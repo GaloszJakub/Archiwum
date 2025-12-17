@@ -26,11 +26,6 @@ export const ReviewsSection = ({ tmdbId, type, mediaTitle }: ReviewsSectionProps
   const addReview = useAddReview();
   const deleteReview = useDeleteReview();
 
-  // Debug
-  console.log('Reviews data:', reviews);
-  console.log('User ID:', user?.uid);
-  console.log('Reviews loading:', reviewsLoading);
-
   const handleSubmit = async () => {
     if (rating === 0) {
       alert('Wybierz ocenę');
@@ -88,11 +83,10 @@ export const ReviewsSection = ({ tmdbId, type, mediaTitle }: ReviewsSectionProps
             className={`transition-colors ${readonly ? 'cursor-default' : 'cursor-pointer hover:scale-110'}`}
           >
             <Star
-              className={`w-6 h-6 ${
-                star <= (readonly ? value : (hoverRating || value))
-                  ? 'fill-yellow-400 text-yellow-400'
-                  : 'text-gray-400'
-              }`}
+              className={`w-6 h-6 ${star <= (readonly ? value : (hoverRating || value))
+                ? 'fill-yellow-400 text-yellow-400'
+                : 'text-gray-400'
+                }`}
             />
           </button>
         ))}
@@ -111,11 +105,10 @@ export const ReviewsSection = ({ tmdbId, type, mediaTitle }: ReviewsSectionProps
                 {[1, 2, 3, 4, 5].map((star) => (
                   <Star
                     key={star}
-                    className={`w-5 h-5 ${
-                      star <= Math.round(averageData.average)
-                        ? 'fill-yellow-400 text-yellow-400'
-                        : 'text-gray-400'
-                    }`}
+                    className={`w-5 h-5 ${star <= Math.round(averageData.average)
+                      ? 'fill-yellow-400 text-yellow-400'
+                      : 'text-gray-400'
+                      }`}
                   />
                 ))}
               </div>
@@ -202,8 +195,7 @@ export const ReviewsSection = ({ tmdbId, type, mediaTitle }: ReviewsSectionProps
           <p className="text-center text-foreground-secondary py-8">Ładowanie recenzji...</p>
         ) : (() => {
           const otherReviews = reviews?.filter((review) => review.userId !== user?.uid) || [];
-          console.log('Other reviews after filter:', otherReviews);
-          
+
           return otherReviews.length > 0 ? (
             otherReviews.map((review) => (
               <div

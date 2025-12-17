@@ -1,0 +1,51 @@
+[
+  {
+    "domain": "filman.cc",
+    "expiry": 1768053766,
+    "httpOnly": true,
+    "name": "user_id",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "1674073"
+  },
+  {
+    "domain": "filman.cc",
+    "expiry": 1768053766,
+    "httpOnly": false,
+    "name": "BKD_REMEMBER",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "rCgRomlzXF6G8dth3TEA0uKPwsce97bq2M1OSDpnLW5iNkxVjfaBQ4"
+  },
+  {
+    "domain": "filman.cc",
+    "httpOnly": false,
+    "name": "PHPSESSID",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": false,
+    "value": "68ticbjbcj7glavlp56lpq58bf"
+  },
+  {
+    "domain": "filman.cc",
+    "expiry": 1766066559,
+    "httpOnly": false,
+    "name": "browserupdateorg",
+    "path": "/",
+    "sameSite": "Lax",
+    "secure": true,
+    "value": "pause"
+  },
+  {
+    "domain": ".filman.cc",
+    "expiry": 1796997723,
+    "httpOnly": true,
+    "name": "cf_clearance",
+    "path": "/",
+    "sameSite": "None",
+    "secure": true,
+    "value": "Ay9gSfkOUBeEZevjxMeDB7Lum7WViNIT1mqI7occf_s-1765461723-1.2.1.1-feWIagagY5rA2vMjFXWxImkFaE0_r4vfNbyr2G34PLl5OW9nYmS6OuN4ktbrOrelGMVoZ6TDDyckw116f54E3ThB8aa9eGL_Y4RYVNbhEIEh6KXV_M1iRPc8_PYbEzSVsTI02JF3Qs3l1yS1nUvlG1_FVki7E09C_0t5fym9plndGI7g16oXHih8AQXIwBWOz3caYrLacsV0V5QPUPl43wIgQYpI3dCfsN8FwEoUQFg"
+  }
+]

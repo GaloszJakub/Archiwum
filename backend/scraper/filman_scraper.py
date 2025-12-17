@@ -75,7 +75,7 @@ class FilmanScraper:
         self.debug = debug
         self.username = username
         self.password = password
-        self.driver: Optional[uc.Chrome] = None
+        self.driver: Optional[webdriver.Chrome] = None
         self.is_logged_in = False
         
         # Configure basic logging to see uc's output

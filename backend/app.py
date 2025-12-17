@@ -26,7 +26,7 @@ CORS(app, resources={
 # Konfiguracja
 HEADLESS_MODE = os.getenv('HEADLESS_MODE', 'True').lower() == 'true'
 PROFILE_DIR = os.path.join(os.path.dirname(__file__), 'scraper', 'chrome_profile')
-COOKIES_FILE = os.path.join(os.path.dirname(__file__), 'session_cookies.json')
+COOKIES_FILE = os.path.join(os.path.dirname(__file__), 'scraper', 'cookies.json')
 
 scraper_instance: FilmanScraper = None
 scraper_lock = threading.Lock()
@@ -60,12 +60,27 @@ def get_scraper() -> FilmanScraper:
     """Zwraca instancję scrapera, tworząc ją jeśli nie istnieje (thread-safe)"""
     global scraper_instance, session_cookies
     with scraper_lock:
-        if scraper_instance is None or scraper_instance.driver is None:
-            if scraper_instance is not None:
-                app.logger.info("🔧 Scraper istnieje ale driver jest None, tworzę nową instancję...")
-            else:
-                app.logger.info("🔧 Tworzenie nowej instancji FilmanScraper...")
-            
+        # Check if existing scraper is still valid
+        needs_new_instance = False
+        if scraper_instance is None:
+            needs_new_instance = True
+            app.logger.info("🔧 Tworzenie nowej instancji FilmanScraper...")
+        elif scraper_instance.driver is None:
+            needs_new_instance = True
+            app.logger.info("🔧 Scraper istnieje ale driver jest None, tworzę nową instancję...")
+        else:
+            # Test if driver is still responsive
+            try:
+                scraper_instance.driver.current_url
+            except Exception as e:
+                needs_new_instance = True
+                app.logger.warning(f"🔧 Driver nie odpowiada ({e}), tworzę nową instancję...")
+                try:
+                    scraper_instance.close()
+                except:
+                    pass
+        
+        if needs_new_instance:
             scraper_instance = FilmanScraper(
                 headless=HEADLESS_MODE, 
                 debug=True,
@@ -83,6 +98,7 @@ def get_scraper() -> FilmanScraper:
             
             if not scraper_instance.check_if_logged_in():
                 app.logger.warning("🔔 Scraper nie jest zalogowany. Użyj /api/update-session aby dodać cookies.")
+        
         return scraper_instance
 
 def shutdown_scraper():
@@ -390,30 +406,19 @@ def scrape_links():
         
         app.logger.info(f"✓ Zakończono pobieranie linków dla {len(results)} odcinków.")
         
-        # NIE restartujemy scrapera - zachowujemy sesję dla kolejnych requestów
-        # try:
-        #     app.logger.info("🔄 Restartuję scraper...")
-        #     scraper.close()
-        #     global scraper_instance
-        #     with scraper_lock:
-        #         scraper_instance = None
-        #     app.logger.info("✓ Scraper zrestartowany.")
-        # except Exception as e:
-        #     app.logger.warning(f"⚠️ Błąd podczas restartu scrapera: {e}")
-        
         return jsonify({
             'success': True,
             'results': results,
             'count': len(results)
         })
 
-    
     except Exception as e:
         app.logger.error(f"Błąd w /api/scrape/links: {e}", exc_info=True)
         return jsonify({
             'success': False,
             'error': str(e)
         }), 500
+
 
 
 if __name__ == '__main__':
