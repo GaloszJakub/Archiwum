@@ -449,7 +449,6 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
               allowFullScreen
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               title="Video Player"
-              sandbox="allow-scripts allow-same-origin allow-presentation"
             />
           </div>
         </DialogContent>

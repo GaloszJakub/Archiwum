@@ -33,7 +33,7 @@ export const useScrollToEpisode = ({
 
 
 
-                    // Define highlight classes (simple green background, permanent)
+                    
                     const highlightClasses = ['!bg-green-500/5'];
 
                     element.classList.add(...highlightClasses);
