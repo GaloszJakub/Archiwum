@@ -15,11 +15,10 @@ import {
     useTopRatedTVShows
 } from '@/hooks/useTMDB';
 import { tmdbService } from '@/lib/tmdb';
-import { useTranslation } from 'react-i18next';
 import { MediaSection } from '@/components/MediaSection';
 
 const Series = () => {
-    const { t } = useTranslation();
+    // const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [showFilters, setShowFilters] = useState(false);
@@ -124,7 +123,7 @@ const Series = () => {
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <SplitText
-                        text={t('series.title')}
+                        text="Seriale"
                         className="text-3xl lg:text-5xl font-bold"
                     />
                     <Button
@@ -142,7 +141,7 @@ const Series = () => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-secondary" />
                     <Input
                         type="text"
-                        placeholder={t('series.search')}
+                        placeholder="Szukaj seriali..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-10 bg-background-secondary border-border w-full"

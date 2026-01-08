@@ -36,10 +36,10 @@ export const AddToCollectionButton = ({ tmdbId, type, title, posterPath }: AddTo
     if (!newCollectionName.trim()) return;
 
     try {
-      const collectionId = await createCollection.mutateAsync({ 
-        name: newCollectionName.trim() 
+      const collectionId = await createCollection.mutateAsync({
+        name: newCollectionName.trim()
       });
-      
+
       await addToCollection.mutateAsync({
         collectionId,
         item: { tmdbId, type, title, posterPath }
@@ -96,16 +96,15 @@ export const AddToCollectionButton = ({ tmdbId, type, title, posterPath }: AddTo
                   <div className="space-y-2 max-h-60 overflow-y-auto">
                     {collections.map((collection) => {
                       const isInCollection = collectionsWithItem?.includes(collection.id);
-                      
+
                       return (
                         <button
                           key={collection.id}
                           onClick={() => !isInCollection && handleAddToExisting(collection.id)}
-                          className={`w-full text-left p-3 rounded-lg border transition-colors ${
-                            isInCollection 
-                              ? 'bg-green-500/10 border-green-500/30' 
-                              : 'hover:bg-accent'
-                          } ${addToCollection.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
+                          className={`w-full text-left p-3 rounded-lg border transition-colors ${isInCollection
+                            ? 'bg-green-500/10 border-green-500/30'
+                            : 'hover:bg-accent'
+                            } ${addToCollection.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
                           disabled={addToCollection.isPending}
                         >
                           <div className="flex items-center justify-between">

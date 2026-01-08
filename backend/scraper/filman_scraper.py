@@ -11,8 +11,7 @@ import base64
 import json
 from typing import List, Dict, Optional
 
-from selenium import webdriver
-from selenium.webdriver.chrome.service import Service
+import undetected_chromedriver as uc
 from selenium.webdriver.chrome.options import Options
 from selenium.common.exceptions import TimeoutException, NoSuchElementException
 from selenium.webdriver.common.by import By
@@ -75,7 +74,7 @@ class FilmanScraper:
         self.debug = debug
         self.username = username
         self.password = password
-        self.driver: Optional[webdriver.Chrome] = None
+        self.driver: Optional[uc.Chrome] = None
         self.is_logged_in = False
         
         # Configure basic logging to see uc's output
@@ -99,30 +98,27 @@ class FilmanScraper:
             print(f"[FilmanScraper] {message}")
 
     def _init_driver(self):
-        """Initializes the Chrome driver with standard Selenium."""
+        """Initializes the Chrome driver with undetected-chromedriver."""
         try:
             self._log(f"Initializing Chrome driver with profile: {self.profile_dir}")
 
-            options = Options()
+            options = uc.ChromeOptions()
 
+            # Headless mode in uc is tricky, often detected. 
+            # If true, we add the argument, but be aware it might trigger detection.
             if self.headless:
                 options.add_argument('--headless=new')
+                options.add_argument('--window-size=1920,1080')
+                options.add_argument('--use-gl=desktop') # Force GPU hardware acceleration
 
             options.add_argument('--no-sandbox')
             options.add_argument('--disable-dev-shm-usage')
-            options.add_argument('--disable-blink-features=AutomationControlled')
             
-            # Używamy profilu Chrome - to DZIAŁA ze zwykłym Selenium!
+            # Profile handling
             options.add_argument(f'--user-data-dir={self.profile_dir}')
             options.add_argument('--profile-directory=Default')
             
-            # Dodaj user-agent żeby wyglądać jak normalny Chrome
-            options.add_argument('--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
-            
-            self.driver = webdriver.Chrome(options=options)
-            
-            # Usuń właściwości webdriver
-            self.driver.execute_script("Object.defineProperty(navigator, 'webdriver', {get: () => undefined})")
+            self.driver = uc.Chrome(options=options, use_subprocess=True)
             
             self._log("✓ Chrome driver initialized.")
         except Exception as e:
@@ -161,25 +157,48 @@ class FilmanScraper:
             time.sleep(1)
             
             # Add each cookie
+            # Add each cookie
             for cookie in cookies:
                 try:
-                    # Ensure required fields
-                    if 'name' not in cookie or 'value' not in cookie:
-                        self._log(f"Skipping invalid cookie: {cookie}")
-                        continue
+                    # Selenium add_cookie only accepts specific keys. 
+                    # We need to sanitize parameters from the extension export.
+                    new_cookie = {
+                        'name': cookie.get('name'),
+                        'value': cookie.get('value'),
+                        'domain': cookie.get('domain', '.filman.cc'),
+                        'path': cookie.get('path', '/'),
+                    }
                     
-                    # Add domain if not present
-                    if 'domain' not in cookie:
-                        cookie['domain'] = '.filman.cc'
+                    # Optional bool boolean fields
+                    if 'secure' in cookie:
+                        new_cookie['secure'] = cookie['secure']
+                    if 'httpOnly' in cookie:
+                        new_cookie['httpOnly'] = cookie['httpOnly']
+                        
+                    # Handle expiry
+                    if 'expirationDate' in cookie:
+                        new_cookie['expiry'] = int(cookie['expirationDate'])
+                    elif 'expiry' in cookie:
+                        new_cookie['expiry'] = int(cookie['expiry'])
+                        
+                    # Handle sameSite if valid
+                    if 'sameSite' in cookie and cookie['sameSite'] in ['Strict', 'Lax', 'None']:
+                        new_cookie['sameSite'] = cookie['sameSite']
                     
-                    self.driver.add_cookie(cookie)
-                    self._log(f"✓ Added cookie: {cookie['name']}")
+                    self.driver.add_cookie(new_cookie)
+                    self._log(f"✓ Added cookie: {new_cookie['name']}")
                 except Exception as e:
-                    self._log(f"Failed to add cookie {cookie.get('name', 'unknown')}: {e}")
+                    self._log(f"Failed to add cookie {cookie.get('name', 'unknown')}: {e} (Type: {type(e).__name__})")
             
             # Refresh to apply cookies
             self.driver.refresh()
             time.sleep(2)
+            
+            try:
+                self.driver.save_screenshot("headless_debug.png")
+                self._log("📸 DEBUG: Screenshot saved to headless_debug.png")
+            except Exception as e:
+                self._log(f"⚠ Failed to save screenshot: {e}")
             
             self._log("✓ Cookies injected successfully")
         except Exception as e:

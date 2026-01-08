@@ -4,12 +4,10 @@ import { ArrowLeft, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useCollectionItems, useRemoveFromCollection, useUserCollections } from '@/hooks/useCollections';
 import { tmdbService } from '@/lib/tmdb';
-import { useTranslation } from 'react-i18next';
 
 const CollectionDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const { data: collections } = useUserCollections();
   const { data: items, isLoading } = useCollectionItems(id || '');
   const removeFromCollection = useRemoveFromCollection();
@@ -18,7 +16,7 @@ const CollectionDetails = () => {
 
   const handleRemove = async (itemId: string) => {
     if (!id) return;
-    
+
     try {
       await removeFromCollection.mutateAsync({ collectionId: id, itemId });
     } catch (error) {
@@ -52,27 +50,27 @@ const CollectionDetails = () => {
       <div className="flex items-center gap-4">
         <Button variant="ghost" onClick={() => navigate('/collections')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
-          {t('common.back')}
+          Powrót
         </Button>
       </div>
 
       <div>
-        <h1 className="text-4xl font-bold mb-2">{collection?.name || t('collections.title')}</h1>
+        <h1 className="text-4xl font-bold mb-2">{collection?.name || 'Kolekcja'}</h1>
         {collection?.description && (
           <p className="text-foreground-secondary">{collection.description}</p>
         )}
         <p className="text-sm text-foreground-secondary mt-2">
-          {items?.length || 0} {t('collections.items')}
+          {items?.length || 0} elementów
         </p>
       </div>
 
       {!items || items.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20 text-center">
           <p className="text-foreground-secondary mb-4">
-            {t('collections.noCollections')}
+            Brak elementów w tej kolekcji
           </p>
           <p className="text-sm text-foreground-secondary">
-            {t('collections.createFirst')}
+            Dodaj pierwsze filmy lub seriale do kolekcji
           </p>
         </div>
       ) : (
@@ -98,7 +96,7 @@ const CollectionDetails = () => {
                   className="w-full h-full object-cover transition-transform group-hover:scale-110"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-                
+
                 <Button
                   size="icon"
                   variant="destructive"
@@ -111,13 +109,13 @@ const CollectionDetails = () => {
                   <Trash2 className="w-4 h-4" />
                 </Button>
               </div>
-              
+
               <div className="mt-2">
                 <h3 className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
                   {item.title}
                 </h3>
                 <p className="text-xs text-foreground-secondary">
-                  {item.type === 'movie' ? t('movies.title') : t('series.title')}
+                  {item.type === 'movie' ? 'Film' : 'Serial'}
                 </p>
               </div>
             </motion.div>

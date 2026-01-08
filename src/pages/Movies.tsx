@@ -15,11 +15,9 @@ import {
     useTopRatedMovies
 } from '@/hooks/useTMDB';
 import { tmdbService } from '@/lib/tmdb';
-import { useTranslation } from 'react-i18next';
 import { MediaSection } from '@/components/MediaSection';
 
 const Movies = () => {
-    const { t } = useTranslation();
     const [searchQuery, setSearchQuery] = useState('');
     const [debouncedQuery, setDebouncedQuery] = useState('');
     const [showFilters, setShowFilters] = useState(false);
@@ -124,7 +122,7 @@ const Movies = () => {
             <div className="space-y-4">
                 <div className="flex items-center justify-between">
                     <SplitText
-                        text={t('movies.title')}
+                        text="Filmy"
                         className="text-3xl lg:text-5xl font-bold"
                     />
                     <Button
@@ -142,7 +140,7 @@ const Movies = () => {
                     <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-foreground-secondary" />
                     <Input
                         type="text"
-                        placeholder={t('movies.search')}
+                        placeholder="Szukaj filmów..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                         className="pl-10 bg-background-secondary border-border w-full"

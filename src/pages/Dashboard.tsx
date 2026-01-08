@@ -5,65 +5,29 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useNavigate } from 'react-router-dom';
 import { usePopularMovies, usePopularTVShows, useSearchMulti } from '@/hooks/useTMDB';
-import { useUserCollections } from '@/hooks/useCollections';
+import { useRecentlyWatched } from '@/hooks/useRecentlyWatched';
 import { useAuth } from '@/contexts/AuthContext';
 import { tmdbService } from '@/lib/tmdb';
-import { useTranslation } from 'react-i18next';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const { data: popularMoviesData } = usePopularMovies();
   const { data: popularTVData } = usePopularTVShows();
   const { data: searchData, isLoading: searchLoading } = useSearchMulti(debouncedQuery);
-  const { data: collections } = useUserCollections();
+  const { data: recentlyWatched } = useRecentlyWatched();
 
   const popularMovies = popularMoviesData?.pages[0]?.results.slice(0, 6) || [];
   const popularTV = popularTVData?.pages[0]?.results.slice(0, 6) || [];
 
-  // Get random items from all collections
-  const [randomCollectionItems, setRandomCollectionItems] = useState<any[]>([]);
   const { user } = useAuth();
-
-  useEffect(() => {
-    const fetchRandomItems = async () => {
-      if (!collections || collections.length === 0 || !user) {
-        setRandomCollectionItems([]);
-        return;
-      }
-
-      try {
-        const { collectionsService } = await import('@/lib/collections');
-
-        const allItemsPromises = collections.map(async (col) => {
-          const items = await collectionsService.getCollectionItems(user.uid, col.id);
-          return items.map(item => ({
-            ...item,
-            collectionName: col.name
-          }));
-        });
-
-        const allItemsArrays = await Promise.all(allItemsPromises);
-        const allItems = allItemsArrays.flat();
-
-        // Shuffle and take 6 random items
-        const shuffled = [...allItems].sort(() => Math.random() - 0.5);
-        setRandomCollectionItems(shuffled.slice(0, 6));
-      } catch (error) {
-        console.error('Error fetching collection items:', error);
-        setRandomCollectionItems([]);
-      }
-    };
-
-    fetchRandomItems();
-  }, [collections, user]);
 
   const searchResults = searchData?.pages[0]?.results || [];
   const showSearchResults = debouncedQuery.trim().length > 0;
+
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -91,7 +55,7 @@ const Dashboard = () => {
         <div className="text-center space-y-4">
           <div className="relative flex items-center justify-center">
             <SplitText
-              text={t('nav.dashboard')}
+              text="Panel"
               className="text-5xl lg:text-6xl font-bold"
             />
             <div className="lg:hidden absolute right-2 top-1/2 -translate-y-1/2 scale-150">
@@ -107,7 +71,7 @@ const Dashboard = () => {
           </div>
 
           <p className="text-xl text-foreground-secondary max-w-2xl mx-auto">
-            {t('dashboard.recommendations')}
+            Odkryj najpopularniejsze filmy i seriale
           </p>
 
           {/* Search Bar */}
@@ -200,40 +164,35 @@ const Dashboard = () => {
         )}
       </AnimatePresence>
 
-      {randomCollectionItems.length > 0 && (
+      {recentlyWatched && recentlyWatched.length > 0 && (
         <section className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <Shuffle className="w-6 h-6 text-primary" />
-              <h2 className="text-3xl font-bold">Z Twoich Kolekcji</h2>
+              <h2 className="text-3xl font-bold">Ostatnio Oglądane</h2>
             </div>
-            <Button
-              variant="ghost"
-              onClick={() => navigate('/collections')}
-              className="text-primary hover:text-primary-hover"
-            >
-              Zobacz wszystkie →
-            </Button>
           </div>
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {randomCollectionItems.map((item) => {
-              const isMovie = item.type === 'movie';
-              return (
-                <div
-                  key={`${item.tmdbId}-${item.type}-${item.id}`}
-                  onClick={() => navigate(isMovie ? `/movie/${item.tmdbId}` : `/series/${item.tmdbId}`)}
-                >
-                  <MovieCard
-                    id={item.tmdbId.toString()}
-                    title={item.title}
-                    posterUrl={tmdbService.getImageUrl(item.posterPath)}
-                    tmdbId={item.tmdbId}
-                    type={item.type}
-                    posterPath={item.posterPath}
-                  />
-                </div>
-              );
-            })}
+            {recentlyWatched.map((item) => (
+              <div
+                key={item.tmdbId}
+                onClick={() => navigate(`/series/${item.tmdbId}`, {
+                  state: {
+                    initialSeason: item.lastEpisode?.seasonNumber,
+                    initialEpisode: item.lastEpisode?.episodeNumber
+                  }
+                })}
+              >
+                <MovieCard
+                  id={item.tmdbId.toString()}
+                  title={item.name}
+                  posterUrl={tmdbService.getImageUrl(item.posterPath)}
+                  tmdbId={item.tmdbId}
+                  type="tv" // Assuming mostly series, but could be movie technically if we change service later
+                  posterPath={item.posterPath}
+                />
+              </div>
+            ))}
           </div>
         </section>
       )}
@@ -242,14 +201,14 @@ const Dashboard = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Film className="w-6 h-6 text-primary" />
-            <h2 className="text-3xl font-bold">{t('movies.popular')}</h2>
+            <h2 className="text-3xl font-bold">Popularne</h2>
           </div>
           <Button
             variant="ghost"
             onClick={() => navigate('/movies')}
             className="text-primary hover:text-primary-hover"
           >
-            {t('dashboard.viewAll')} →
+            Zobacz wszystkie →
           </Button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -277,14 +236,14 @@ const Dashboard = () => {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
             <Tv className="w-6 h-6 text-primary" />
-            <h2 className="text-3xl font-bold">{t('series.popular')}</h2>
+            <h2 className="text-3xl font-bold">Popularne</h2>
           </div>
           <Button
             variant="ghost"
             onClick={() => navigate('/series')}
             className="text-primary hover:text-primary-hover"
           >
-            {t('dashboard.viewAll')} →
+            Zobacz wszystkie →
           </Button>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
@@ -322,7 +281,7 @@ const Dashboard = () => {
           </Button>
           <Button onClick={() => navigate('/series')} variant="outline" size="lg">
             <Tv className="w-5 h-5 mr-2" />
-            {t('series.title')}
+            Seriale
           </Button>
         </div>
       </section>

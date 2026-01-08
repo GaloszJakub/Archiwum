@@ -14,6 +14,7 @@ chromedriver*
 
 # Session cookies (cloud deployment)
 session_cookies.json
+cookies.json
 
 # Chrome profile
 chrome_profile/

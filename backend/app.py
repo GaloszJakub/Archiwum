@@ -88,16 +88,22 @@ def get_scraper() -> FilmanScraper:
             )
             
             # Inject cookies if available
-            if session_cookies:
-                app.logger.info("🍪 Injecting stored cookies...")
+            # Check login status first using the profile
+            is_logged_in = scraper_instance.check_if_logged_in()
+            
+            # Inject cookies ONLY if not already logged in and cookies are available
+            if not is_logged_in and session_cookies:
+                app.logger.info("🍪 Session not active, attempting cookie injection...")
                 try:
                     scraper_instance.inject_cookies(session_cookies)
-                    app.logger.info("✓ Cookies injected successfully")
+                    if scraper_instance.check_if_logged_in():
+                        app.logger.info("✓ Login successful after cookie injection")
+                    else:
+                        app.logger.warning("⚠ Login failed even after cookie injection")
                 except Exception as e:
                     app.logger.error(f"Error injecting cookies: {e}")
-            
-            if not scraper_instance.check_if_logged_in():
-                app.logger.warning("🔔 Scraper nie jest zalogowany. Użyj /api/update-session aby dodać cookies.")
+            elif is_logged_in:
+                app.logger.info("✓ Already logged in (using existing profile session)")
         
         return scraper_instance
 

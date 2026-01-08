@@ -8,7 +8,6 @@ import { useAuth } from '../contexts/AuthContext';
 import { db } from '../lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
 
 interface Episode {
   episode: string;
@@ -25,8 +24,7 @@ interface ScraperButtonProps {
 
 export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps) {
   const { user, isAdmin } = useAuth();
-  const { t } = useTranslation();
-  
+
   const [isOpen, setIsOpen] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [isScraping, setIsScraping] = useState(false);
@@ -37,18 +35,19 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
   const [manualTitle, setManualTitle] = useState('');
 
   // Scraper is available for admins (works via Tailscale Funnel)
-  if (!isAdmin) return null;
+  const API_URL = import.meta.env.VITE_SCRAPER_API_URL;
 
-  const API_URL = import.meta.env.VITE_SCRAPER_API_URL || 'http://localhost:5001/api';
+  if (!isAdmin) return null;
+  if (!API_URL) return null;
 
   const handleSearch = async (customTitle?: string) => {
     setIsSearching(true);
     const searchTitle = customTitle || title;
-    
+
     try {
       const response = await fetch(`${API_URL}/scrape/search`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -62,7 +61,7 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
 
       if (data.success && data.episodes && data.episodes.length > 0) {
         setEpisodes(data.episodes || []);
-        
+
         if (type === 'series') {
           const uniqueSeasons = [...new Set(
             data.episodes.map((ep: Episode) => ep.episode.match(/S(\d+)/)?.[0] || '')
@@ -71,7 +70,7 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
         } else if (type === 'movie' && data.episodes.length === 1) {
           setSelectedEpisodes(new Set([data.episodes[0].episode]));
         }
-        
+
         setIsOpen(true);
         setShowManualSearch(false);
         toast.success(`Znaleziono ${data.episodes.length} odcinków`, {
@@ -126,7 +125,7 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
     const seasonEpisodes = episodes
       .filter(ep => ep.episode.startsWith(season))
       .map(ep => ep.episode);
-    
+
     const newSelected = new Set(selectedEpisodes);
     seasonEpisodes.forEach(ep => newSelected.add(ep));
     setSelectedEpisodes(newSelected);
@@ -151,14 +150,14 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
     setIsScraping(true);
     try {
       // Przygotuj listę odcinków do scrapowania
-      const episodesToScrape = episodes.filter(ep => 
+      const episodesToScrape = episodes.filter(ep =>
         selectedEpisodes.has(ep.episode)
       );
 
       // Wywołaj scraper
       const response = await fetch(`${API_URL}/scrape/links`, {
         method: 'POST',
-        headers: { 
+        headers: {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
@@ -173,16 +172,16 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
           if (!result.links || result.links.length === 0) {
             continue;
           }
-          
+
           if (type === 'series') {
             const match = result.episode.match(/S(\d+)E(\d+)/i);
             if (!match) continue;
-            
+
             const seasonNumber = parseInt(match[1]);
             const episodeNumber = parseInt(match[2]);
             const docId = `${movieId.replace('tmdb_', '')}_s${seasonNumber}_e${episodeNumber}`;
             const mainLink = result.links[0];
-            
+
             const episodeRef = doc(db, 'episodes', docId);
             await setDoc(episodeRef, {
               tmdbId: parseInt(movieId.replace('tmdb_', '')),
@@ -241,7 +240,7 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
 
         setIsOpen(false);
         setSelectedEpisodes(new Set());
-        
+
         // Auto-refresh po 2 sekundach
         setTimeout(() => {
           window.location.reload();
@@ -369,12 +368,12 @@ export function ScraperButton({ movieId, title, type, year }: ScraperButtonProps
               <>
                 <div className="flex gap-2 flex-wrap">
                   <Button onClick={selectAll} variant="outline" size="sm">
-                    {t('common.selectAll')}
+                    Zaznacz wszystko
                   </Button>
                   <Button onClick={deselectAll} variant="outline" size="sm">
-                    {t('common.deselectAll')}
+                    Odznacz wszystko
                   </Button>
-                  
+
                   {type === 'series' && seasons.map(season => (
                     <Button
                       key={season}

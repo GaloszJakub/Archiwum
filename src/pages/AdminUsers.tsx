@@ -14,12 +14,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useTranslation } from 'react-i18next';
 
 const AdminUsers = () => {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
-  const { t } = useTranslation();
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -90,8 +88,8 @@ const AdminUsers = () => {
       <div className="flex items-center gap-3">
         <Shield className="w-8 h-8 text-primary" />
         <div>
-          <h1 className="text-4xl font-bold">{t('admin.userManagement')}</h1>
-          <p className="text-foreground-secondary">{t('admin.title')}</p>
+          <h1 className="text-4xl font-bold">Zarządzanie użytkownikami</h1>
+          <p className="text-foreground-secondary">Panel Administratora</p>
         </div>
       </div>
 
@@ -100,9 +98,9 @@ const AdminUsers = () => {
           <table className="w-full">
             <thead className="bg-background border-b border-border">
               <tr>
-                <th className="text-left p-4 font-semibold">{t('profile.user')}</th>
-                <th className="text-left p-4 font-semibold">{t('profile.email')}</th>
-                <th className="text-left p-4 font-semibold">{t('admin.role')}</th>
+                <th className="text-left p-4 font-semibold">Użytkownik</th>
+                <th className="text-left p-4 font-semibold">Email</th>
+                <th className="text-left p-4 font-semibold">Rola</th>
                 <th className="text-left p-4 font-semibold">Utworzono</th>
                 <th className="text-left p-4 font-semibold">Ostatnie logowanie</th>
               </tr>
@@ -173,7 +171,7 @@ const AdminUsers = () => {
           <li>• <strong>Admin</strong> - Pełny dostęp + zarządzanie użytkownikami</li>
         </ul>
       </div>
-    </motion.div>
+    </motion.div >
   );
 };
 

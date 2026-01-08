@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Plus, ExternalLink, Trash2, Play } from 'lucide-react';
+import { Plus, Trash2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,23 +30,27 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSeasonEpisodes, useAddEpisodeLink, useDeleteEpisodeLink } from '@/hooks/useEpisodes';
-import { stopLenis, startLenis } from '@/lib/smoothScroll';
+import { stopLenis, startLenis, getLenis } from '@/lib/smoothScroll';
 import { useSeasonDetails } from '@/hooks/useTMDB';
 import { db } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
+import { useWakeLock } from '@/hooks/useWakeLock';
+import { useWatchedEpisodes, useMarkEpisodeWatched } from '@/hooks/useWatchedEpisodes';
+import { useScrollToEpisode } from '@/hooks/useScrollToEpisode';
 
 interface EpisodeManagerProps {
   tmdbId: number;
   seasonNumber: number;
   episodeCount: number;
   seasonName: string;
+  seriesName: string;
+  targetEpisode?: number;
 }
 
-export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName }: EpisodeManagerProps) => {
-  const { isAdmin } = useAuth();
-  const { t } = useTranslation();
+export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName, seriesName, targetEpisode }: EpisodeManagerProps) => {
+  const { isAdmin, user } = useAuth();
+  // const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
   const [link, setLink] = useState('');
@@ -59,17 +63,22 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
   const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
   const [episodeToDelete, setEpisodeToDelete] = useState<number | null>(null);
 
-  const { data: episodes, isLoading } = useSeasonEpisodes(tmdbId, seasonNumber);
-  const { data: seasonDetails } = useSeasonDetails(tmdbId, seasonNumber);
+  const { data: episodes, isLoading: isEpisodesLoading } = useSeasonEpisodes(tmdbId, seasonNumber);
+  const { data: seasonDetails, isLoading: isSeasonDetailsLoading } = useSeasonDetails(tmdbId, seasonNumber);
   const addEpisodeLink = useAddEpisodeLink();
   const deleteEpisodeLink = useDeleteEpisodeLink();
 
-  // Block body scroll when dialog is open
+  const { data: watchedEpisodes } = useWatchedEpisodes(tmdbId);
+  const markEpisodeWatched = useMarkEpisodeWatched();
+  const watchedEpisodesSet = new Set(
+    watchedEpisodes?.map(ep => `${ep.seasonNumber}_${ep.episodeNumber}`) || []
+  );
+
+  useWakeLock(playerOpen);
+
   useEffect(() => {
     if (open || playerOpen) {
-      // Stop Lenis smooth scroll
       stopLenis();
-      // Block body scroll
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
       document.body.style.paddingRight = `${scrollbarWidth}px`;
@@ -86,16 +95,27 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
     };
   }, [open, playerOpen]);
 
-  const handlePlayClick = (url: string, e: React.MouseEvent) => {
+  // Scroll to target episode with retry logic
+  useScrollToEpisode({
+    targetEpisode,
+    tmdbId,
+    seasonNumber,
+    shouldScroll: !isEpisodesLoading && !isSeasonDetailsLoading && !!seasonDetails?.episodes
+  });
+
+  const handlePlayClick = (url: string, episodeNumber: number, e: React.MouseEvent) => {
     e.preventDefault();
     setCurrentPlayerUrl(url);
     setPlayerOpen(true);
+
+    if (user) {
+      markEpisodeWatched.mutate({ tmdbId, seasonNumber, episodeNumber });
+    }
   };
 
   const handleAddLink = async () => {
     if (!link.trim()) return;
 
-    // Get episode title from TMDB
     const episodeTitle = seasonDetails?.episodes?.find(
       ep => ep.episode_number === selectedEpisode
     )?.name || '';
@@ -115,12 +135,12 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
 
       setLink('');
       setOpen(false);
-      toast.success(t('common.success'), {
-        description: `${t('details.episode')} ${selectedEpisode} - ${quality}`,
+      toast.success('Sukces', {
+        description: `Odcinek ${selectedEpisode} - ${quality}`,
       });
     } catch (error) {
       console.error('Error adding episode link:', error);
-      toast.error(t('common.error'), {
+      toast.error('Błąd', {
         description: 'Spróbuj ponownie',
       });
     }
@@ -159,7 +179,7 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
 
   const confirmDeleteLink = async () => {
     if (!linkToDelete) return;
-    
+
     const { episodeNumber, linkIndex } = linkToDelete;
     const episode = episodesMap.get(episodeNumber);
     if (!episode || !episode.links) return;
@@ -169,10 +189,8 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
 
     toast.promise(
       (async () => {
-        // Usuń link z array
         const updatedLinks = episode.links!.filter((_, idx) => idx !== linkIndex);
-        
-        // Jeśli to był ostatni link, usuń cały dokument
+
         if (updatedLinks.length === 0) {
           await deleteEpisodeLink.mutateAsync({
             tmdbId,
@@ -182,13 +200,11 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
           return;
         }
 
-        // Zaktualizuj dokument z nową listą linków
         const episodeId = `${tmdbId}_s${seasonNumber}_e${episodeNumber}`;
         const episodeRef = doc(db, 'episodes', episodeId);
-        
-        // Zaktualizuj główny link na pierwszy z pozostałych
+
         const mainLink = updatedLinks[0];
-        
+
         await setDoc(episodeRef, {
           ...episode,
           link: mainLink.url,
@@ -198,7 +214,6 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
           updatedAt: new Date(),
         }, { merge: true });
 
-        // Odśwież dane
         await deleteEpisodeLink.mutateAsync({
           tmdbId,
           seasonNumber,
@@ -246,9 +261,9 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
                     <SelectTrigger id="episode">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent 
-                      className="max-h-[300px]" 
-                      position="popper" 
+                    <SelectContent
+                      className="max-h-[300px]"
+                      position="popper"
                       sideOffset={5}
                     >
                       {episodeOptions.map((ep) => (
@@ -316,120 +331,117 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
         )}
       </div>
 
-      {isLoading ? (
+      {isEpisodesLoading || isSeasonDetailsLoading ? (
         <div className="text-center py-4 text-foreground-secondary">Ładowanie...</div>
-      ) : episodes && episodes.length > 0 ? (
+      ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {episodes.map((episode) => (
-            <div
-              key={episode.id}
-              className="bg-background rounded-lg p-4 border border-border hover:border-primary/50 transition-colors group"
-            >
-              <div className="flex items-start justify-between mb-2">
-                <div className="flex-1">
-                  <h4 className="font-semibold">Odcinek {episode.episodeNumber}</h4>
-                  {episode.title && episode.title !== `Odcinek ${episode.episodeNumber}` && (
-                    <p className="text-sm text-foreground-secondary line-clamp-1 mt-0.5">
-                      {episode.title}
-                    </p>
+          {seasonDetails?.episodes?.map((tmdbEpisode) => {
+            const dbEpisode = episodesMap.get(tmdbEpisode.episode_number);
+
+            return (
+              <div
+                key={tmdbEpisode.id}
+                id={`episode-${tmdbId}-s${seasonNumber}-e${tmdbEpisode.episode_number}`}
+                className={`bg-background rounded-xl p-4 border transition-all group ${watchedEpisodesSet.has(`${seasonNumber}_${tmdbEpisode.episode_number}`)
+                  ? 'border-green-500/50 shadow-sm shadow-green-500/10'
+                  : dbEpisode ? 'border-border shadow-sm' : 'border-border/50 opacity-70'
+                  }`}
+              >
+                <div className="flex items-start justify-between mb-3">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-xs font-bold text-primary">
+                        Odcinek {tmdbEpisode.episode_number}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-sm line-clamp-2 leading-snug">
+                      {tmdbEpisode.name || `Odcinek ${tmdbEpisode.episode_number}`}
+                    </h4>
+                  </div>
+                  {isAdmin && dbEpisode && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => handleDelete(tmdbEpisode.episode_number)}
+                      className="h-8 w-8 text-destructive hover:bg-destructive/10 -mt-1 -mr-1"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
                   )}
-                   {/*<div className="flex items-center gap-2 mt-1">
-                    {episode.quality && (
-                      <span className="text-xs px-2 py-0.5 bg-primary/20 text-primary rounded">
-                        {episode.quality}
-                      </span>
-                    )}
-                    {episode.language && (
-                      <span className="text-xs px-2 py-0.5 bg-background-secondary rounded">
-                        {episode.language}
-                      </span>
-                    )}
-                  </div> */}
-                </div> 
-                {isAdmin && (
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={() => handleDelete(episode.episodeNumber)}
-                    className="opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                  {isAdmin && !dbEpisode && (
+                    <Button
+                      size="icon"
+                      variant="ghost"
+                      onClick={() => {
+                        setSelectedEpisode(tmdbEpisode.episode_number);
+                        setOpen(true);
+                      }}
+                      className="h-8 w-8 text-muted-foreground hover:text-primary -mt-1 -mr-1"
+                      title="Dodaj link"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
+
+                {dbEpisode ? (
+                  <div className="space-y-0 mt-auto border-t border-border/50">
+                    {dbEpisode.links && dbEpisode.links.length > 0 ? (
+                      dbEpisode.links.map((linkItem, idx) => (
+                        <div
+                          key={idx}
+                          className="flex items-center gap-2 hover:bg-primary/5 py-3 border-b border-border/50 last:border-0 transition-colors group/link"
+                        >
+                          <button
+                            onClick={(e) => handlePlayClick(linkItem.url, tmdbEpisode.episode_number, e)}
+                            className="flex items-center gap-2 text-sm text-primary hover:underline flex-1 min-w-0 text-left"
+                          >
+                            <Play className="w-4 h-4 flex-shrink-0" />
+                            <span className="flex-1 min-w-0 truncate font-medium">
+                              {linkItem.provider}
+                              {linkItem.version && <span className="text-foreground-secondary ml-1.5 opacity-80 decoration-0 font-normal"> • {linkItem.version}</span>}
+                            </span>
+                          </button>
+                          {isAdmin && (
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteLink(tmdbEpisode.episode_number, idx);
+                              }}
+                              className="h-6 w-6 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          )}
+                        </div>
+                      ))
+                    ) : dbEpisode.link ? (
+                      <button
+                        onClick={(e) => handlePlayClick(dbEpisode.link!, tmdbEpisode.episode_number, e)}
+                        className="w-full flex items-center justify-center gap-2 p-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-semibold"
+                      >
+                        <Play className="w-4 h-4 fill-current" />
+                        Odtwórz
+                      </button>
+                    ) : null}
+                  </div>
+                ) : (
+                  <div className="mt-auto">
+                    <p className="text-[11px] text-muted-foreground italic">Brak dostępnych linków</p>
+                  </div>
                 )}
               </div>
-              {/* Wyświetl wszystkie linki jeśli są dostępne */}
-              {episode.links && episode.links.length > 0 ? (
-                <div className="space-y-1 mt-2">
-                  {episode.links.map((link, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-start gap-1 hover:bg-primary/5 p-1 rounded transition-colors group/link"
-                    >
-                      <button
-                        onClick={(e) => handlePlayClick(link.url, e)}
-                        className="flex items-start gap-1.5 text-xs text-primary hover:underline flex-1 min-w-0 text-left"
-                      >
-                        <Play className="w-3 h-3 flex-shrink-0 mt-0.5" />
-                        <span className="flex-1 min-w-0 break-words">
-                          <span className="font-medium">{link.provider}</span>
-                          {link.version && <span className="text-foreground-secondary"> • {link.version}</span>}
-                          {link.quality && <span className="text-foreground-secondary"> • {link.quality}</span>}
-                        </span>
-                      </button>
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-shrink-0"
-                        title="Otwórz w nowej karcie"
-                      >
-                        <ExternalLink className="w-2.5 h-2.5 text-muted-foreground hover:text-primary transition-colors" />
-                      </a>
-                      {isAdmin && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteLink(episode.episodeNumber, idx);
-                          }}
-                          className="h-5 w-5 flex-shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity"
-                        >
-                          <Trash2 className="w-2.5 h-2.5 text-destructive" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : episode.link ? (
-                <a
-                  href={episode.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 text-sm text-primary hover:underline mt-2"
-                >
-                  <Play className="w-4 h-4" />
-                  Odtwórz
-                  <ExternalLink className="w-3 h-3" />
-                </a>
-              ) : (
-                <p className="text-xs text-foreground-secondary mt-2">Brak dostępnych linków</p>
-              )}
-            </div>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-8 text-foreground-secondary">
-          <p>Brak dodanych linków do odcinków</p>
-          {isAdmin && (
-            <p className="text-sm mt-2">Kliknij "Dodaj link" aby dodać pierwszy odcinek</p>
-          )}
+            );
+          })}
         </div>
       )}
 
       {/* Player Modal */}
       <Dialog open={playerOpen} onOpenChange={setPlayerOpen}>
-        <DialogContent className="max-w-7xl w-full h-[90vh] p-0">
+        <DialogContent className="max-w-7xl w-full h-[90vh] p-0" aria-describedby={undefined}>
+          <DialogTitle className="sr-only">Odtwarzacz wideo</DialogTitle>
           <div className="relative w-full h-full bg-black">
             <iframe
               src={currentPlayerUrl}
@@ -437,6 +449,7 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName 
               allowFullScreen
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
               title="Video Player"
+              sandbox="allow-scripts allow-same-origin allow-presentation"
             />
           </div>
         </DialogContent>

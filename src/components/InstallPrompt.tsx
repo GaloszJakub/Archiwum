@@ -22,6 +22,11 @@ export function InstallPrompt() {
         const ios = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as any).MSStream;
         setIsIOS(ios);
 
+        // Check if mobile (simple regex for common mobile devices)
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
+        if (!isMobile) return;
+
         // If iOS and not standalone, show prompt immediately (or maybe after a delay)
         if (ios && !isStandaloneMode) {
             // Show iOS prompt logic (maybe with delay or storing preference in localStorage)
@@ -87,7 +92,7 @@ export function InstallPrompt() {
                                 <p className="text-sm text-muted-foreground mt-1">
                                     {isIOS
                                         ? "Dodaj do ekranu głównego dla lepszego doświadczenia."
-                                        : "Zainstaluj aplikację, aby korzystać offline i szybciej."}
+                                        : "Zainstaluj aplikację, aby korzystać szybciej."}
                                 </p>
                             </div>
                         </div>

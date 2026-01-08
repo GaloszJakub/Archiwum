@@ -19,10 +19,8 @@ import {
   useDeleteCollection,
   useUpdateCollection,
 } from '@/hooks/useCollections';
-import { useTranslation } from 'react-i18next';
 
 const Collections = () => {
-  const { t } = useTranslation();
   const navigate = useNavigate();
   const { data: collections, isLoading } = useUserCollections();
   const createCollection = useCreateCollection();
@@ -98,9 +96,9 @@ const Collections = () => {
     >
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-4xl font-bold mb-2">{t('collections.myCollections')}</h1>
+          <h1 className="text-4xl font-bold mb-2">Moje kolekcje</h1>
           <p className="text-foreground-secondary">
-            {t('collections.myCollections')}
+            Moje kolekcje
           </p>
         </div>
 
@@ -108,29 +106,29 @@ const Collections = () => {
           <DialogTrigger asChild>
             <Button>
               <Plus className="w-4 h-4 mr-2" />
-              {t('collections.createNew')}
+              Nowa kolekcja
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{t('collections.create')}</DialogTitle>
+              <DialogTitle>Utwórz kolekcję</DialogTitle>
               <DialogDescription>
                 Nadaj nazwę swojej nowej kolekcji
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div>
-                <Label htmlFor="name">{t('collections.name')}</Label>
+                <Label htmlFor="name">Nazwa</Label>
                 <Input
                   id="name"
                   value={newCollectionName}
                   onChange={(e) => setNewCollectionName(e.target.value)}
-                  placeholder={t('collections.name')}
+                  placeholder="Nazwa"
                   onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
                 />
               </div>
               <div>
-                <Label htmlFor="description">{t('collections.description')}</Label>
+                <Label htmlFor="description">Opis</Label>
                 <Input
                   id="description"
                   value={newCollectionDescription}
@@ -143,7 +141,7 @@ const Collections = () => {
                 disabled={!newCollectionName.trim() || createCollection.isPending}
                 className="w-full"
               >
-                {t('collections.save')}
+                Zapisz
               </Button>
             </div>
           </DialogContent>
@@ -242,7 +240,7 @@ const Collections = () => {
                   onChange={(e) =>
                     setEditingCollection({ ...editingCollection, name: e.target.value })
                   }
-                  placeholder={t('collections.name')}
+                  placeholder="Nazwa"
                 />
               </div>
               <div>

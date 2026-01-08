@@ -5,25 +5,23 @@ import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
-import { useTranslation } from 'react-i18next';
 
 export const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const { isAdmin, signOut } = useAuth();
-  const { t } = useTranslation();
 
   const navItems = [
-    { path: '/', icon: Home, label: t('nav.dashboard') },
-    { path: '/movies', icon: Film, label: t('nav.movies') },
-    { path: '/series', icon: Tv, label: t('nav.series') },
-    { path: '/collections', icon: FolderHeart, label: t('nav.collections') },
-    { path: '/profile', icon: User, label: t('nav.profile') },
+    { path: '/', icon: Home, label: 'Panel' },
+    { path: '/movies', icon: Film, label: 'Filmy' },
+    { path: '/series', icon: Tv, label: 'Seriale' },
+    { path: '/collections', icon: FolderHeart, label: 'Kolekcje' },
+    { path: '/profile', icon: User, label: 'Profil' },
   ];
 
   const adminNavItems = [
-    { path: '/admin/users', icon: Shield, label: t('nav.admin'), adminOnly: true },
+    { path: '/admin/users', icon: Shield, label: 'Admin', adminOnly: true },
   ];
 
   const allNavItems = isAdmin ? [...navItems, ...adminNavItems] : navItems;

@@ -34,7 +34,8 @@ import { stopLenis, startLenis } from '@/lib/smoothScroll';
 import { db } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
-import { useTranslation } from 'react-i18next';
+import { useWakeLock } from '@/hooks/useWakeLock';
+
 
 interface MovieLinksManagerProps {
   tmdbId: number;
@@ -43,7 +44,6 @@ interface MovieLinksManagerProps {
 
 export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps) => {
   const { isAdmin } = useAuth();
-  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [link, setLink] = useState('');
   const [quality, setQuality] = useState('1080p');
@@ -58,6 +58,9 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
   const { data: links, isLoading } = useMovieLinks(tmdbId);
   const addMovieLink = useAddMovieLink();
   const deleteMovieLink = useDeleteMovieLink();
+
+  useWakeLock(playerOpen);
+
 
   // Block body scroll when dialog is open
   useEffect(() => {
@@ -141,7 +144,7 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
 
   const confirmDeleteLink = async () => {
     if (!linkToDelete) return;
-    
+
     const { linkId, linkIndex } = linkToDelete;
     const movieLink = links?.find(l => l.id === linkId);
     if (!movieLink || !movieLink.links) return;
@@ -153,7 +156,7 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
       (async () => {
         // Usuń link z array
         const updatedLinks = movieLink.links!.filter((_, idx) => idx !== linkIndex);
-        
+
         // Jeśli to był ostatni link, usuń cały dokument
         if (updatedLinks.length === 0) {
           await deleteMovieLink.mutateAsync({ tmdbId, linkId });
@@ -162,10 +165,10 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
 
         // Zaktualizuj dokument z nową listą linków
         const movieRef = doc(db, 'episodes', linkId);
-        
+
         // Zaktualizuj główny link na pierwszy z pozostałych
         const mainLink = updatedLinks[0];
-        
+
         await setDoc(movieRef, {
           ...movieLink,
           link: mainLink.url,
@@ -193,18 +196,18 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
   return (
     <div className="bg-background-secondary rounded-xl p-6 lg:p-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold">{t('details.manageLinks')}</h2>
+        <h2 className="text-2xl font-bold">Zarządzanie linkami</h2>
         {isAdmin && (
           <Dialog open={open} onOpenChange={setOpen} modal={true}>
             <DialogTrigger asChild>
               <Button size="sm" variant="outline">
                 <Plus className="w-4 h-4 mr-2" />
-                {t('details.addLink')}
+                Dodaj link
               </Button>
             </DialogTrigger>
             <DialogContent className="max-h-[90vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>{t('details.addLink')}</DialogTitle>
+                <DialogTitle>Dodaj link</DialogTitle>
                 <DialogDescription>
                   {movieTitle}
                 </DialogDescription>
@@ -258,7 +261,7 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
                   disabled={!link.trim() || addMovieLink.isPending}
                   className="w-full"
                 >
-                  {t('details.addLink')}
+                  Dodaj link
                 </Button>
               </div>
             </DialogContent>
@@ -280,7 +283,7 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
                 <div>
                   <h3 className="text-lg font-bold">Dostępne odtwarzacze</h3>
                   <p className="text-sm text-muted-foreground">
-                    {link.links && link.links.length > 0 
+                    {link.links && link.links.length > 0
                       ? `${link.links.length} ${link.links.length === 1 ? 'link' : 'linki'} streamingowe`
                       : 'Brak linków'}
                   </p>
@@ -326,15 +329,6 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
                           </div>
                         </div>
                       </button>
-                      <a
-                        href={streamLink.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="flex-shrink-0 p-2 hover:bg-background rounded transition-colors"
-                        title="Otwórz w nowej karcie"
-                      >
-                        <ExternalLink className="w-4 h-4 text-muted-foreground hover:text-primary transition-colors" />
-                      </a>
                       {isAdmin && (
                         <Button
                           size="icon"
@@ -343,7 +337,7 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
                             e.stopPropagation();
                             handleDeleteSingleLink(link.id, idx);
                           }}
-                          className="h-8 w-8 flex-shrink-0 opacity-0 group-hover/link:opacity-100 transition-opacity text-destructive hover:bg-destructive/10"
+                          className="h-8 w-8 flex-shrink-0 transition-opacity text-destructive hover:bg-destructive/10"
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -367,7 +361,7 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
                       {link.quality} • {link.language}
                     </div>
                   </div>
-                  <ExternalLink className="w-4 h-4 text-muted-foreground" />
+
                 </a>
               ) : (
                 <p className="text-center py-8 text-muted-foreground">Brak dostępnych linków</p>
@@ -377,9 +371,9 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
         </div>
       ) : (
         <div className="text-center py-8 text-foreground-secondary">
-          <p>{t('details.noLinks')}</p>
+          <p>Brak linków</p>
           {isAdmin && (
-            <p className="text-sm mt-2">{t('details.addFirstLink')}</p>
+            <p className="text-sm mt-2">Dodaj pierwszy link</p>
           )}
         </div>
       )}

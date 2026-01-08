@@ -5,11 +5,14 @@ import path from "path";
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => ({
-  base: "/",
+  base: "/Archiwum/",
   server: {
     host: "::",
     port: 3000,
     allowedHosts: true,
+  },
+  esbuild: {
+    drop: mode === 'production' ? ['console', 'debugger'] : [],
   },
   plugins: [
     react(),
@@ -24,8 +27,8 @@ export default defineConfig(({ mode }) => ({
         background_color: "#0f0f0f",
         display: "standalone",
         orientation: "portrait-primary",
-        start_url: "/",
-        scope: "/",
+        start_url: "/Archiwum/",
+        scope: "/Archiwum/",
         icons: [
           {
             src: "android-chrome-192x192.png",

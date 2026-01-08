@@ -1,4 +1,5 @@
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
+import { useEffect } from 'react';
 import { useTVShowDetails } from '@/hooks/useTMDB';
 import { tmdbService } from '@/lib/tmdb';
 import { Button } from '@/components/ui/button';
@@ -9,17 +10,47 @@ import { EpisodeManager } from '@/components/EpisodeManager';
 import { ReviewsSection } from '@/components/ReviewsSection';
 import { ScraperButton } from '@/components/ScraperButton';
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuth } from '@/contexts/AuthContext';
 
 const SeriesDetails = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const { data, isLoading, error } = useTVShowDetails(parseInt(id || '0'));
   const [expandedSeason, setExpandedSeason] = useState<number | null>(null);
   const [showAllSeasons, setShowAllSeasons] = useState(false);
-  const { t } = useTranslation();
   const { isAdmin } = useAuth();
+  const initialState = location.state as { initialSeason?: number; initialEpisode?: number } | null;
+
+
+  useEffect(() => {
+    if (initialState?.initialSeason) {
+      setExpandedSeason(initialState.initialSeason);
+      // Ensure the season is visible (if hidden by showAllSeasons logic)
+      // If the season index is > 3, we might need to expand showAllSeasons, 
+      // but simpler is to just let it be handled by scrolling mostly.
+      // However, the list slicing `.slice(0, showAllSeasons ? undefined : 3)` might hide it.
+      // We should check if we need to set showAllSeasons(true).
+      // Since we don't have the seasons list easily available here without `data` which might be loading,
+      // we can do this check when data loads or just default to true if deep linking?
+      // Actually, let's keep it simple for now and rely on user expanding if it's very old, 
+      // OR better: check against data later.
+    }
+  }, [initialState]);
+
+  // Expand "show all" if target season is beyond first 3
+  useEffect(() => {
+    if (data?.seasons && initialState?.initialSeason) {
+      const seasonIndex = data.seasons.findIndex(s => s.season_number === initialState.initialSeason);
+      // Filter out specials (season 0) if the logic does so
+      const activeSeasons = data.seasons.filter(s => s.season_number > 0);
+      const targetIndex = activeSeasons.findIndex(s => s.season_number === initialState.initialSeason);
+
+      if (targetIndex >= 3) {
+        setShowAllSeasons(true);
+      }
+    }
+  }, [data, initialState]);
 
   if (isLoading) {
     return (
@@ -32,10 +63,10 @@ const SeriesDetails = () => {
   if (error || !data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-screen gap-4">
-        <p className="text-foreground-secondary">{t('series.noResults')}</p>
+        <p className="text-foreground-secondary">Brak wyników</p>
         <Button onClick={() => navigate('/series')}>
           <ArrowLeft className="w-4 h-4 mr-2" />
-          {t('common.back')}
+          Powrót
         </Button>
       </div>
     );
@@ -58,7 +89,7 @@ const SeriesDetails = () => {
             className="gap-2 bg-black/50 hover:bg-black/70 backdrop-blur-sm"
           >
             <ArrowLeft className="w-4 h-4" />
-            {t('common.back')}
+            Powrót
           </Button>
         </div>
         <img
@@ -67,7 +98,7 @@ const SeriesDetails = () => {
           className="w-full h-full object-cover object-top"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
-        
+
         {/* Title Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8">
           <div className="max-w-4xl">
@@ -89,14 +120,14 @@ const SeriesDetails = () => {
             title={data.name}
             posterPath={data.poster_path}
           />
-          
+
           <ScraperButton
             movieId={`tmdb_${data.id}`}
             title={data.name}
             type="series"
             year={data.first_air_date ? new Date(data.first_air_date).getFullYear() : undefined}
           />
-          
+
           {data.vote_average > 0 && (
             <div className="flex items-center gap-2 bg-primary/20 px-4 py-2 rounded-lg">
               <Star className="w-5 h-5 text-primary fill-current" />
@@ -104,21 +135,21 @@ const SeriesDetails = () => {
               <span className="text-foreground-secondary text-sm">/ 10</span>
             </div>
           )}
-          
+
           {data.first_air_date && (
             <div className="flex items-center gap-2 text-foreground-secondary">
               <Calendar className="w-5 h-5" />
               <span className="text-lg">{new Date(data.first_air_date).getFullYear()}</span>
             </div>
           )}
-          
+
           {data.episode_run_time && data.episode_run_time[0] && (
             <div className="flex items-center gap-2 text-foreground-secondary">
               <Clock className="w-5 h-5" />
               <span className="text-lg">{data.episode_run_time[0]} min</span>
             </div>
           )}
-          
+
           {data.status && (
             <div className="px-4 py-2 bg-background-secondary rounded-lg text-lg">
               {data.status}
@@ -144,54 +175,58 @@ const SeriesDetails = () => {
         {data.number_of_seasons && data.number_of_seasons > 0 && (
           <div className="bg-background-secondary rounded-xl p-6 lg:p-8">
             <h2 className="text-2xl font-bold mb-6">Sezony i Odcinki</h2>
-            
+
             <div className="space-y-4">
               {data.seasons
                 ?.filter(season => season.season_number > 0)
                 .slice(0, showAllSeasons ? undefined : 3)
                 .map((season) => (
-                <div
-                  key={season.id}
-                  className="bg-background rounded-lg border border-border overflow-hidden"
-                >
-                  {/* Season Header */}
-                  <button
-                    onClick={() => setExpandedSeason(
-                      expandedSeason === season.season_number ? null : season.season_number
-                    )}
-                    className="w-full p-4 flex items-center gap-4 hover:bg-background/80 transition-colors"
+                  <div
+                    key={season.id}
+                    className="bg-background rounded-lg border border-border overflow-hidden"
                   >
-                    {season.poster_path && (
-                      <img
-                        src={tmdbService.getImageUrl(season.poster_path, 'w200')}
-                        alt={season.name}
-                        className="w-12 h-18 object-cover rounded"
-                      />
-                    )}
-                    <div className="flex-1 text-left">
-                      <h3 className="font-semibold text-lg">{season.name}</h3>
-                      <p className="text-sm text-foreground-secondary">
-                        {season.episode_count} {season.episode_count === 1 ? 'odcinek' : 'odcinków'}
-                        {season.air_date && ` • ${new Date(season.air_date).getFullYear()}`}
-                      </p>
-                    </div>
-                    <div className="text-foreground-secondary">
-                      {expandedSeason === season.season_number ? '▼' : '▶'}
-                    </div>
-                  </button>
+                    {/* Season Header */}
+                    <button
+                      onClick={() => setExpandedSeason(
+                        expandedSeason === season.season_number ? null : season.season_number
+                      )}
+                      aria-expanded={expandedSeason === season.season_number}
+                      aria-controls={`season-content-${season.season_number}`}
+                      className="w-full p-4 flex items-center gap-4 hover:bg-background/80 transition-colors"
+                    >
+                      {season.poster_path && (
+                        <img
+                          src={tmdbService.getImageUrl(season.poster_path, 'w200')}
+                          alt={season.name}
+                          className="w-12 h-18 object-cover rounded"
+                        />
+                      )}
+                      <div className="flex-1 text-left">
+                        <h3 className="font-semibold text-lg">{season.name}</h3>
+                        <p className="text-sm text-foreground-secondary">
+                          {season.episode_count} {season.episode_count === 1 ? 'odcinek' : 'odcinków'}
+                          {season.air_date && ` • ${new Date(season.air_date).getFullYear()}`}
+                        </p>
+                      </div>
+                      <div className="text-foreground-secondary">
+                        {expandedSeason === season.season_number ? '▼' : '▶'}
+                      </div>
+                    </button>
 
-                  {expandedSeason === season.season_number && isAdmin && (
-                    <div className="p-4 border-t border-border">
-                      <EpisodeManager
-                        tmdbId={data.id}
-                        seasonNumber={season.season_number}
-                        episodeCount={season.episode_count}
-                        seasonName={season.name}
-                      />
-                    </div>
-                  )}
-                </div>
-              ))}
+                    {expandedSeason === season.season_number && (
+                      <div className="p-4 border-t border-border" id={`season-content-${season.season_number}`}>
+                        <EpisodeManager
+                          tmdbId={data.id}
+                          seasonNumber={season.season_number}
+                          episodeCount={season.episode_count}
+                          seasonName={season.name}
+                          seriesName={data.name}
+                          targetEpisode={initialState?.initialSeason === season.season_number ? initialState.initialEpisode : undefined}
+                        />
+                      </div>
+                    )}
+                  </div>
+                ))}
             </div>
 
             {/* Show More Button */}
@@ -203,9 +238,9 @@ const SeriesDetails = () => {
                   className="w-full sm:w-auto"
                 >
                   {showAllSeasons ? (
-                    <>{t('common.showLess')}</>
+                    <>Pokaż mniej</>
                   ) : (
-                    <>{t('common.showMore')} ({data.seasons.filter(s => s.season_number > 0).length})</>
+                    <>Pokaż więcej ({data.seasons.filter(s => s.season_number > 0).length})</>
                   )}
                 </Button>
               </div>
@@ -213,7 +248,7 @@ const SeriesDetails = () => {
 
             <div className="mt-6 pt-4 border-t border-border">
               <p className="text-foreground-secondary">
-                <span className="font-semibold">{data.number_of_seasons}</span> {data.number_of_seasons === 1 ? 'sezon' : 'sezonów'} • 
+                <span className="font-semibold">{data.number_of_seasons}</span> {data.number_of_seasons === 1 ? 'sezon' : 'sezonów'} •
                 <span className="font-semibold ml-1">{data.number_of_episodes}</span> {data.number_of_episodes === 1 ? 'odcinek' : 'odcinków'} łącznie
               </p>
             </div>
@@ -222,16 +257,16 @@ const SeriesDetails = () => {
 
         {/* Overview */}
         <div className="bg-background-secondary rounded-xl p-6 lg:p-8">
-          <h2 className="text-2xl font-bold mb-4">{t('common.overview')}</h2>
+          <h2 className="text-2xl font-bold mb-4">Opis</h2>
           <p className="text-foreground-secondary text-lg leading-relaxed">
-            {data.overview || t('common.noDescription')}
+            {data.overview || 'Brak opisu'}
           </p>
         </div>
 
         {/* Additional Info Grid */}
         {(() => {
           const infoItems = [];
-          
+
           if (data.popularity > 0) {
             infoItems.push({ label: 'Popularność', value: data.popularity.toFixed(0) });
           }

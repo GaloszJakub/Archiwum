@@ -1,31 +1,29 @@
-import { MovieDetails as MovieDetailsType } from '@/lib/tmdb';
-import { useTranslation } from 'react-i18next';
+import { DetailedMovie } from '@/lib/tmdb';
 
 interface AdditionalInfoGridProps {
-  data: MovieDetailsType;
+  data: DetailedMovie;
 }
 
 const AdditionalInfoGrid = ({ data }: AdditionalInfoGridProps) => {
-  const { t } = useTranslation();
   const infoItems = [];
 
   if (data.popularity > 0) {
-    infoItems.push({ label: t('common.rating'), value: data.popularity.toFixed(0) });
+    infoItems.push({ label: 'Popularność', value: data.popularity.toFixed(0) });
   }
   if (data.vote_count > 0) {
-    infoItems.push({ label: t('common.rating'), value: data.vote_count.toLocaleString() });
+    infoItems.push({ label: 'Głosy', value: data.vote_count.toLocaleString() });
   }
   if (data.budget && data.budget > 0) {
-    infoItems.push({ label: t('details.budget'), value: `$${(data.budget / 1000000).toFixed(0)}M` });
+    infoItems.push({ label: 'Budżet', value: `$${(data.budget / 1000000).toFixed(0)}M` });
   }
   if (data.revenue && data.revenue > 0) {
-    infoItems.push({ label: t('details.revenue'), value: `$${(data.revenue / 1000000).toFixed(0)}M` });
+    infoItems.push({ label: 'Przychód', value: `$${(data.revenue / 1000000).toFixed(0)}M` });
   }
   if (data.spoken_languages && data.spoken_languages.length > 0) {
-    infoItems.push({ label: t('details.originalLanguage'), value: data.spoken_languages.map(lang => lang.name).join(', ') });
+    infoItems.push({ label: 'Język', value: data.spoken_languages.map(lang => lang.name).join(', ') });
   }
   if (data.production_companies && data.production_companies.length > 0) {
-    infoItems.push({ label: t('details.productionCompanies'), value: data.production_companies[0].name });
+    infoItems.push({ label: 'Produkcja', value: data.production_companies[0].name });
   }
 
   if (infoItems.length === 0) {
