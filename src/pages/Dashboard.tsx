@@ -1,292 +1,444 @@
-import { SplitText } from '@/components/SplitText';
-import { MovieCard } from '@/components/MovieCard';
-import { Shuffle, Film, Tv, Star, Search, Loader2, X, User } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { usePopularMovies, usePopularTVShows, useSearchMulti } from '@/hooks/useTMDB';
+import { usePopularMovies, usePopularTVShows, useTrendingMovies } from '@/hooks/useTMDB';
 import { useRecentlyWatched } from '@/hooks/useRecentlyWatched';
 import { useAuth } from '@/contexts/AuthContext';
 import { tmdbService } from '@/lib/tmdb';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useMemo } from 'react';
+
+// Design tokens
+const A = {
+  bg: '#0a0a0c',
+  surface: '#14141a',
+  surface2: '#1c1c23',
+  border: 'rgba(255,248,230,0.06)',
+  border2: 'rgba(255,248,230,0.10)',
+  text: '#f3efe6',
+  text2: '#b8b1a3',
+  muted: '#847d6f',
+  subtle: '#58524a',
+  amber: '#d4a056',
+};
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [searchQuery, setSearchQuery] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
   const { data: popularMoviesData } = usePopularMovies();
   const { data: popularTVData } = usePopularTVShows();
-  const { data: searchData, isLoading: searchLoading } = useSearchMulti(debouncedQuery);
   const { data: recentlyWatched } = useRecentlyWatched();
+  const { data: trendingData } = useTrendingMovies();
+  const { user } = useAuth();
 
   const popularMovies = popularMoviesData?.pages[0]?.results.slice(0, 6) || [];
   const popularTV = popularTVData?.pages[0]?.results.slice(0, 6) || [];
 
-  const { user } = useAuth();
+  // Pick a trending movie for the hero
+  const heroMovie = useMemo(() => {
+    if (trendingData?.results?.length) {
+      const withBackdrop = trendingData.results.filter((m: any) => m.backdrop_path);
+      return withBackdrop[0] || null;
+    }
+    return null;
+  }, [trendingData]);
 
-  const searchResults = searchData?.pages[0]?.results || [];
-  const showSearchResults = debouncedQuery.trim().length > 0;
-
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setDebouncedQuery(searchQuery);
-    }, 500);
-
-    return () => clearTimeout(timer);
-  }, [searchQuery]);
-
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-  };
-
-  const clearSearch = () => {
-    setSearchQuery('');
-    setDebouncedQuery('');
-  };
+  const genres = [
+    { name: 'Dramat', id: 18 },
+    { name: 'Sci-Fi', id: 878 },
+    { name: 'Komedia', id: 35 },
+    { name: 'Dokument', id: 99 },
+    { name: 'Animacja', id: 16 },
+    { name: 'Thriller', id: 53 },
+  ];
 
   return (
-    <div className="space-y-12">
-      <div className="space-y-2">
-        {/* Mobile Profile Icon */}
+    <div
+      style={{
+        fontFamily: '"Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+        paddingBottom: 100,
+      }}
+    >
+      {/* ═══ HERO ═══ */}
+      {heroMovie && (
+        <div style={{ position: 'relative', height: 520, overflow: 'hidden' }}>
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              backgroundImage: `url(${tmdbService.getImageUrl(heroMovie.backdrop_path, 'original')})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center top',
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: `linear-gradient(to right, ${A.bg} 0%, rgba(10,10,12,0.6) 50%, rgba(10,10,12,0.2) 100%)`,
+            }}
+          />
+          <div
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: `linear-gradient(to bottom, rgba(10,10,12,0.3) 0%, rgba(10,10,12,0) 30%, rgba(10,10,12,0) 60%, ${A.bg} 100%)`,
+            }}
+          />
 
-
-        <div className="text-center space-y-4">
-          <div className="relative flex items-center justify-center">
-            <SplitText
-              text="Panel"
-              className="text-5xl lg:text-6xl font-bold"
-            />
-            <div className="lg:hidden absolute right-2 top-1/2 -translate-y-1/2 scale-150">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate('/profile')}
-                className="rounded-full w-12 h-12"
-              >
-                <User className="w-8 h-8" />
-              </Button>
-            </div>
-          </div>
-
-          <p className="text-xl text-foreground-secondary max-w-2xl mx-auto">
-            Odkryj najpopularniejsze filmy i seriale
-          </p>
-
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="max-w-2xl mx-auto mt-6">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="text"
-                placeholder="Szukaj filmów i seriali..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 pr-12 py-6 text-lg bg-background-secondary border-border"
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  onClick={clearSearch}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                >
-                  <X className="w-5 h-5" />
-                </button>
-              )}
-            </div>
-          </form>
-        </div>
-      </div>
-
-      {/* Search Results */}
-      <AnimatePresence>
-        {showSearchResults && (
-          <motion.section
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            className="space-y-6"
+          <div
+            style={{
+              position: 'relative',
+              zIndex: 2,
+              padding: '80px 20px',
+              maxWidth: 640,
+            }}
+            className="sm:px-14"
           >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Search className="w-6 h-6 text-primary" />
-                <h2 className="text-3xl font-bold">
-                  Wyniki wyszukiwania dla "{debouncedQuery}"
-                </h2>
-              </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 20 }}>
+              <span style={{ width: 24, height: 1, background: A.amber }} />
+              <span style={{ fontSize: 11, letterSpacing: '0.2em', color: A.amber, fontWeight: 600 }}>
+                POPULARNE
+              </span>
+              <span style={{ color: A.subtle, fontSize: 11 }}>·</span>
+              <span style={{ fontSize: 11, color: A.muted, letterSpacing: '0.1em' }}>
+                {heroMovie.media_type === 'movie' ? 'FILM' : 'SERIAL'} · {heroMovie.release_date?.slice(0, 4) || heroMovie.first_air_date?.slice(0, 4)}
+              </span>
             </div>
 
-            {searchLoading && (
-              <div className="flex items-center justify-center py-16">
-                <Loader2 className="w-8 h-8 animate-spin text-primary" />
-              </div>
-            )}
+            <h1
+              style={{
+                margin: 0,
+                fontFamily: '"Instrument Serif", "Times New Roman", serif',
+                fontStyle: 'italic',
+                fontWeight: 400,
+                fontSize: 'clamp(40px, 8vw, 72px)',
+                lineHeight: 0.95,
+                letterSpacing: '-0.025em',
+                color: A.text,
+              }}
+            >
+              {heroMovie.title || heroMovie.name}
+            </h1>
 
-            {!searchLoading && searchResults.length === 0 && (
-              <div className="text-center py-16 bg-background-secondary rounded-xl">
-                <p className="text-foreground-secondary text-lg">
-                  Nie znaleziono wyników dla "{debouncedQuery}"
-                </p>
-              </div>
-            )}
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 14,
+                marginTop: 22,
+                fontSize: 13,
+                color: A.text2,
+              }}
+            >
+              <span>{heroMovie.release_date?.slice(0, 4) || heroMovie.first_air_date?.slice(0, 4)}</span>
+              <span style={{ color: A.subtle }}>·</span>
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                <Star size={12} fill={A.amber} color={A.amber} />
+                <span style={{ color: A.amber, fontWeight: 500 }}>
+                  {heroMovie.vote_average?.toFixed(1)}
+                </span>
+              </span>
+            </div>
 
-            {!searchLoading && searchResults.length > 0 && (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {searchResults.map((item: any) => {
-                  const isMovie = item.media_type === 'movie';
-                  const title = isMovie ? item.title : item.name;
-                  const year = isMovie
-                    ? item.release_date ? new Date(item.release_date).getFullYear() : undefined
-                    : item.first_air_date ? new Date(item.first_air_date).getFullYear() : undefined;
+            <p
+              style={{
+                margin: '22px 0 0',
+                color: A.text2,
+                fontSize: 15,
+                lineHeight: 1.55,
+                maxWidth: 540,
+                display: '-webkit-box',
+                WebkitLineClamp: 3,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {heroMovie.overview}
+            </p>
 
-                  return (
-                    <div
-                      key={item.id}
-                      onClick={() => navigate(isMovie ? `/movie/${item.id}` : `/series/${item.id}`)}
-                    >
-                      <MovieCard
-                        id={item.id.toString()}
-                        title={title || 'Unknown'}
-                        posterUrl={tmdbService.getImageUrl(item.poster_path)}
-                        year={year}
-                        rating={item.vote_average}
-                        tmdbId={item.id}
-                        type={isMovie ? 'movie' : 'tv'}
-                        posterPath={item.poster_path}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </motion.section>
-        )}
-      </AnimatePresence>
-
-      {recentlyWatched && recentlyWatched.length > 0 && (
-        <section className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Shuffle className="w-6 h-6 text-primary" />
-              <h2 className="text-3xl font-bold">Ostatnio Oglądane</h2>
+            <div style={{ display: 'flex', gap: 10, marginTop: 28 }}>
+              <button
+                onClick={() => navigate(heroMovie.media_type === 'movie' ? `/movie/${heroMovie.id}` : `/series/${heroMovie.id}`)}
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  height: 44,
+                  padding: '0 24px',
+                  borderRadius: 10,
+                  background: A.text,
+                  color: A.bg,
+                  border: 'none',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  fontFamily: 'inherit',
+                  cursor: 'pointer',
+                  letterSpacing: '-0.01em',
+                }}
+              >
+                Więcej info
+              </button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* ═══ CONTINUE WATCHING ═══ */}
+      {recentlyWatched && recentlyWatched.length > 0 && (
+        <section style={{ padding: '0 20px', marginTop: heroMovie ? -20 : 40, position: 'relative', zIndex: 3 }} className="sm:px-14">
+          <SectionHeader title="Kontynuuj oglądanie" subtitle="Wróć tam, gdzie skończyłeś" />
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {recentlyWatched.map((item) => (
-              <div
+              <PosterCard
                 key={item.tmdbId}
-                onClick={() => navigate(`/series/${item.tmdbId}`, {
-                  state: {
-                    initialSeason: item.lastEpisode?.seasonNumber,
-                    initialEpisode: item.lastEpisode?.episodeNumber
-                  }
-                })}
-              >
-                <MovieCard
-                  id={item.tmdbId.toString()}
-                  title={item.name}
-                  posterUrl={tmdbService.getImageUrl(item.posterPath)}
-                  tmdbId={item.tmdbId}
-                  type="tv" // Assuming mostly series, but could be movie technically if we change service later
-                  posterPath={item.posterPath}
-                />
-              </div>
+                title={item.name}
+                posterPath={item.posterPath}
+                subtitle={item.lastEpisode ? `S${item.lastEpisode.seasonNumber} · E${String(item.lastEpisode.episodeNumber).padStart(2, '0')}` : undefined}
+                onClick={() =>
+                  navigate(`/series/${item.tmdbId}`, {
+                    state: {
+                      initialSeason: item.lastEpisode?.seasonNumber,
+                      initialEpisode: item.lastEpisode?.episodeNumber,
+                    },
+                  })
+                }
+              />
             ))}
           </div>
         </section>
       )}
 
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Film className="w-6 h-6 text-primary" />
-            <h2 className="text-3xl font-bold">Popularne</h2>
-          </div>
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/movies')}
-            className="text-primary hover:text-primary-hover"
-          >
-            Zobacz wszystkie →
-          </Button>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {popularMovies.map((movie) => (
-            <div
-              key={movie.id}
-              onClick={() => navigate(`/movie/${movie.id}`)}
-            >
-              <MovieCard
-                id={movie.id.toString()}
-                title={movie.title || 'Unknown'}
-                posterUrl={tmdbService.getImageUrl(movie.poster_path)}
-                year={movie.release_date ? new Date(movie.release_date).getFullYear() : undefined}
-                rating={movie.vote_average}
-                tmdbId={movie.id}
-                type="movie"
+      {/* ═══ POPULAR MOVIES ═══ */}
+      {(
+        <section style={{ padding: '0 20px', marginTop: 48 }} className="sm:px-14">
+          <SectionHeader
+            title="Popularne filmy"
+            subtitle="Najczęściej oglądane w tym tygodniu"
+            actionLabel="Pokaż wszystko →"
+            onAction={() => navigate('/movies')}
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {popularMovies.map((movie: any) => (
+              <PosterCard
+                key={movie.id}
+                title={movie.title}
                 posterPath={movie.poster_path}
+                subtitle={`Film · ${movie.release_date?.slice(0, 4)}`}
+                rating={movie.vote_average}
+                onClick={() => navigate(`/movie/${movie.id}`)}
               />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <Tv className="w-6 h-6 text-primary" />
-            <h2 className="text-3xl font-bold">Popularne</h2>
+            ))}
           </div>
-          <Button
-            variant="ghost"
-            onClick={() => navigate('/series')}
-            className="text-primary hover:text-primary-hover"
-          >
-            Zobacz wszystkie →
-          </Button>
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-          {popularTV.map((show) => (
-            <div
-              key={show.id}
-              onClick={() => navigate(`/series/${show.id}`)}
-            >
-              <MovieCard
-                id={show.id.toString()}
-                title={show.name || 'Unknown'}
-                posterUrl={tmdbService.getImageUrl(show.poster_path)}
-                year={show.first_air_date ? new Date(show.first_air_date).getFullYear() : undefined}
-                rating={show.vote_average}
-                tmdbId={show.id}
-                type="tv"
-                posterPath={show.poster_path}
-              />
-            </div>
-          ))}
-        </div>
-      </section>
+        </section>
+      )}
 
-      {/* Top Rated Section */}
-      <section className="bg-background-secondary rounded-xl p-8 text-center space-y-4">
-        <Star className="w-12 h-12 text-primary mx-auto" />
-        <h2 className="text-2xl font-bold">Odkryj najlepiej oceniane produkcje</h2>
-        <p className="text-foreground-secondary max-w-xl mx-auto">
-          Przeglądaj tysiące filmów i seriali z całego świata
-        </p>
-        <div className="flex gap-4 justify-center pt-4">
-          <Button onClick={() => navigate('/movies')} size="lg">
-            <Film className="w-5 h-5 mr-2" />
-            Filmy
-          </Button>
-          <Button onClick={() => navigate('/series')} variant="outline" size="lg">
-            <Tv className="w-5 h-5 mr-2" />
-            Seriale
-          </Button>
-        </div>
-      </section>
+      {/* ═══ POPULAR TV ═══ */}
+      {(
+        <section style={{ padding: '0 20px', marginTop: 48 }} className="sm:px-14">
+          <SectionHeader
+            title="Popularne seriale"
+            subtitle="Seriale, które warto nadrobić"
+            actionLabel="Pokaż wszystko →"
+            onAction={() => navigate('/series')}
+          />
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+            {popularTV.map((show: any) => (
+              <PosterCard
+                key={show.id}
+                title={show.name}
+                posterPath={show.poster_path}
+                subtitle={`Serial · ${show.first_air_date?.slice(0, 4)}`}
+                rating={show.vote_average}
+                onClick={() => navigate(`/series/${show.id}`)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ═══ GENRES ═══ */}
+      {(
+        <section style={{ padding: '48px 20px 64px' }} className="sm:px-14">
+          <h2
+            style={{
+              margin: '0 0 18px',
+              fontSize: 22,
+              fontWeight: 600,
+              letterSpacing: '-0.018em',
+              color: A.text,
+            }}
+          >
+            Przeglądaj wg gatunku
+          </h2>
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+            {genres.map((genre) => (
+              <div
+                key={genre.name}
+                onClick={() => navigate(`/movies?genre=${genre.id}`)}
+                style={{
+                  position: 'relative',
+                  overflow: 'hidden',
+                  borderRadius: 10,
+                  height: 96,
+                  border: `1px solid ${A.border}`,
+                  cursor: 'pointer',
+                  background: 'linear-gradient(160deg, #1a1d26 0%, #2c2418 60%, #14161c 100%)',
+                }}
+              >
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    background: 'linear-gradient(120deg, rgba(10,10,12,0.85) 0%, rgba(10,10,12,0.3) 100%)',
+                  }}
+                />
+                <div
+                  style={{
+                    position: 'absolute',
+                    inset: 0,
+                    padding: '16px 18px',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    justifyContent: 'flex-end',
+                  }}
+                >
+                  <div
+                    style={{
+                      fontFamily: '"Instrument Serif", serif',
+                      fontStyle: 'italic',
+                      fontSize: 22,
+                      color: A.text,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {genre.name}
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 };
+
+// ─── Shared sub-components ───
+
+function SectionHeader({ title, subtitle, actionLabel, onAction }: {
+  title: string;
+  subtitle?: string;
+  actionLabel?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        marginBottom: 18,
+      }}
+    >
+      <div>
+        <h2
+          style={{
+            margin: 0,
+            fontSize: 22,
+            fontWeight: 600,
+            letterSpacing: '-0.018em',
+            color: '#f3efe6',
+          }}
+        >
+          {title}
+        </h2>
+        {subtitle && (
+          <div style={{ fontSize: 12, color: '#847d6f', marginTop: 4 }}>{subtitle}</div>
+        )}
+      </div>
+      {actionLabel && (
+        <span
+          onClick={onAction}
+          style={{
+            fontSize: 11,
+            color: '#847d6f',
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            cursor: 'pointer',
+          }}
+        >
+          {actionLabel}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function PosterCard({ title, posterPath, subtitle, rating, onClick }: {
+  title: string;
+  posterPath: string | null;
+  subtitle?: string;
+  rating?: number;
+  onClick: () => void;
+}) {
+  return (
+    <div onClick={onClick} style={{ cursor: 'pointer' }}>
+      <div style={{ position: 'relative', borderRadius: 4, overflow: 'hidden' }}>
+        <img
+          src={tmdbService.getImageUrl(posterPath)}
+          alt={title}
+          style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
+          loading="lazy"
+        />
+      </div>
+      <div style={{ marginTop: 10 }}>
+        <div
+          style={{
+            fontFamily: '"Instrument Serif", serif',
+            fontStyle: 'italic',
+            fontSize: 16,
+            color: '#f3efe6',
+            lineHeight: 1.1,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+          }}
+        >
+          {title}
+        </div>
+        {(subtitle || rating) && (
+          <div
+            style={{
+              fontSize: 11,
+              color: '#847d6f',
+              marginTop: 4,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+            }}
+          >
+            {subtitle && <span>{subtitle}</span>}
+            {rating && (
+              <>
+                <span style={{ color: '#58524a' }}>·</span>
+                <span
+                  style={{
+                    color: '#d4a056',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 3,
+                    fontFamily: '"JetBrains Mono", monospace',
+                  }}
+                >
+                  <Star size={10} fill="#d4a056" color="#d4a056" />
+                  {rating.toFixed(1)}
+                </span>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default Dashboard;

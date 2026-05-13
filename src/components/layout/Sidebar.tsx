@@ -1,30 +1,30 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Film, Tv, FolderHeart, User, Shield, LogOut, Users } from 'lucide-react';
-import { motion } from 'framer-motion';
-import { useState } from 'react';
-import { cn } from '@/lib/utils';
+import { Home, Search, Heart, Download, Film, Tv, FileText, Sparkles, Shield, LogOut } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
 
-export const Sidebar = () => {
+const A = {
+  bg: '#0a0a0c',
+  surface: '#14141a',
+  surface2: '#1c1c23',
+  border: 'rgba(255,248,230,0.06)',
+  border2: 'rgba(255,248,230,0.10)',
+  text: '#f3efe6',
+  text2: '#b8b1a3',
+  muted: '#847d6f',
+  subtle: '#58524a',
+  amber: '#d4a056',
+  amberDim: 'rgba(212,160,86,0.18)',
+};
+
+interface SidebarProps {
+  onClose?: () => void;
+  showCloseButton?: boolean;
+}
+
+export const Sidebar = ({ onClose, showCloseButton }: SidebarProps) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const [hoveredItem, setHoveredItem] = useState<string | null>(null);
   const { isAdmin, signOut } = useAuth();
-
-  const navItems = [
-    { path: '/', icon: Home, label: 'Panel' },
-    { path: '/movies', icon: Film, label: 'Filmy' },
-    { path: '/series', icon: Tv, label: 'Seriale' },
-    { path: '/collections', icon: FolderHeart, label: 'Kolekcje' },
-    { path: '/profile', icon: User, label: 'Profil' },
-  ];
-
-  const adminNavItems = [
-    { path: '/admin/users', icon: Shield, label: 'Admin', adminOnly: true },
-  ];
-
-  const allNavItems = isAdmin ? [...navItems, ...adminNavItems] : navItems;
 
   const handleSignOut = async () => {
     try {
@@ -35,134 +35,229 @@ export const Sidebar = () => {
     }
   };
 
+  const navItems = [
+    { path: '/', exact: true, Icon: Home, label: 'Główna' },
+    { path: '/search', exact: false, Icon: Search, label: 'Wyszukaj' },
+    { path: '/collections', exact: false, Icon: Heart, label: 'Moja lista' },
+  ];
+
+  if (isAdmin) {
+    navItems.push({ path: '/admin/users', exact: false, Icon: Shield, label: 'Admin' });
+  }
+
+  const libraryItems = [
+    { path: '/movies', label: 'Filmy', Icon: Film },
+    { path: '/series', label: 'Seriale', Icon: Tv },
+  ];
+
+  const genreItems = [
+    { label: 'Dramat', id: 18 },
+    { label: 'Sci-Fi', id: 878 },
+    { label: 'Komedia', id: 35 },
+    { label: 'Thriller', id: 53 },
+    { label: 'Dokument', id: 99 },
+  ];
+
+  const isActive = (path: string, exact: boolean) =>
+    exact ? location.pathname === path : location.pathname.startsWith(path);
+
   return (
-    <aside className="hidden lg:flex flex-col fixed left-0 top-0 z-40 h-screen w-64 bg-background-secondary border-r border-border">
+    <aside
+      style={{
+        width: 260,
+        height: '100vh',
+        position: 'fixed',
+        left: 0,
+        top: 0,
+        zIndex: 40,
+        background: A.bg,
+        borderRight: `1px solid ${A.border}`,
+        display: 'flex',
+        flexDirection: 'column',
+        fontFamily: '"Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+        overflowY: 'auto',
+        overflowX: 'hidden',
+      }}
+      aria-label="Nawigacja boczna"
+    >
       {/* Logo */}
-      <div className="flex items-center h-16 px-6 border-b border-border">
-        <Link to="/" className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center">
-            <Film className="w-5 h-5 text-primary-foreground" />
+      <div style={{ padding: '28px 24px 24px', borderBottom: `1px solid ${A.border}`, marginBottom: 20 }}>
+        <Link to="/" onClick={onClose} style={{ textDecoration: 'none' }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
+            <span
+              style={{
+                fontFamily: '"Instrument Serif", "Times New Roman", serif',
+                fontStyle: 'italic',
+                fontSize: 28,
+                color: A.text,
+                lineHeight: 1,
+              }}
+            >
+              Archiwum
+            </span>
           </div>
-          <span className="text-xl font-bold">Archiwum</span>
         </Link>
+        <div
+          style={{
+            fontSize: 10,
+            color: A.amber,
+            letterSpacing: '0.18em',
+            fontWeight: 600,
+            marginTop: 4,
+          }}
+        >
+          NAS · LOCAL
+        </div>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 py-8 overflow-y-auto">
-        <ul className="space-y-2 px-4">
-          {allNavItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            const Icon = item.icon;
-
-            return (
-              <li key={item.path}>
-                <MagneticLink
-                  to={item.path}
-                  isActive={isActive}
-                  isHovered={hoveredItem === item.path}
-                  onHoverStart={() => setHoveredItem(item.path)}
-                  onHoverEnd={() => setHoveredItem(null)}
-                  onClick={() => { }}
-                >
-                  <Icon className="w-5 h-5 shrink-0" />
-                  <span>{item.label}</span>
-                </MagneticLink>
-              </li>
-            );
-          })}
-        </ul>
+      {/* Main nav */}
+      <nav style={{ display: 'flex', flexDirection: 'column', gap: 2, padding: '0 12px' }}>
+        {navItems.map(({ path, exact, Icon, label }) => {
+          const active = isActive(path, exact);
+          return (
+            <Link
+              key={path}
+              to={path}
+              onClick={onClose}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+                padding: '10px 12px',
+                borderRadius: 8,
+                background: active ? A.surface2 : 'transparent',
+                color: active ? A.text : A.text2,
+                fontSize: 13.5,
+                fontWeight: 500,
+                cursor: 'pointer',
+                textDecoration: 'none',
+                position: 'relative',
+              }}
+            >
+              {active && (
+                <div
+                  style={{
+                    position: 'absolute',
+                    left: -12,
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    width: 3,
+                    height: 18,
+                    background: A.amber,
+                    borderRadius: 2,
+                  }}
+                />
+              )}
+              <Icon size={18} style={{ color: active ? A.text : A.text2, strokeWidth: 1.75 }} />
+              <span style={{ flex: 1 }}>{label}</span>
+            </Link>
+          );
+        })}
       </nav>
 
-      {/* Friends Button */}
-      <div className="p-4 border-t border-border">
-        <Button
-          variant="ghost"
-          onClick={() => {
-            const event = new CustomEvent('openFriendsSidebar');
-            window.dispatchEvent(event);
+      {/* Biblioteka section */}
+      <div style={{ padding: '20px 24px 8px' }}>
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.18em',
+            color: A.muted,
+            textTransform: 'uppercase',
           }}
-          className="w-full justify-start gap-3 text-foreground-secondary hover:text-primary hover:bg-secondary/50"
         >
-          <Users className="w-5 h-5 shrink-0" />
-          <span>Znajomi</span>
-        </Button>
+          Biblioteka
+        </div>
       </div>
+      <nav style={{ display: 'flex', flexDirection: 'column', padding: '0 12px' }}>
+        {libraryItems.map(({ path, label }) => {
+          const active = isActive(path, false);
+          return (
+            <Link
+              key={path}
+              to={path}
+              onClick={onClose}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                padding: '8px 12px',
+                borderRadius: 8,
+                color: active ? A.text : A.text2,
+                fontSize: 13,
+                cursor: 'pointer',
+                textDecoration: 'none',
+              }}
+            >
+              <span>{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
 
-      {/* Logout Button */}
-      <div className="px-4 pb-4">
-        <Button
-          variant="ghost"
-          onClick={handleSignOut}
-          className="w-full justify-start gap-3 text-foreground-secondary hover:text-destructive hover:bg-destructive/10"
+      {/* Gatunki section */}
+      <div style={{ padding: '20px 24px 8px' }}>
+        <div
+          style={{
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.18em',
+            color: A.muted,
+            textTransform: 'uppercase',
+          }}
         >
-          <LogOut className="w-5 h-5 shrink-0" />
+          Gatunki
+        </div>
+      </div>
+      <nav style={{ display: 'flex', flexDirection: 'column', padding: '0 12px' }}>
+        {genreItems.map(({ label, id }) => (
+          <Link
+            key={id}
+            to={`/movies?genre=${id}`}
+            onClick={onClose}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '7px 12px',
+              borderRadius: 8,
+              color: A.text2,
+              fontSize: 12.5,
+              cursor: 'pointer',
+              textDecoration: 'none',
+            }}
+          >
+            <span>{label}</span>
+          </Link>
+        ))}
+      </nav>
+
+      <div style={{ flex: 1 }} />
+
+      {/* Logout */}
+      <div style={{ padding: '12px 12px 16px' }}>
+        <button
+          onClick={handleSignOut}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            padding: '10px 12px',
+            borderRadius: 8,
+            color: A.muted,
+            fontSize: 13,
+            cursor: 'pointer',
+            background: 'transparent',
+            border: 'none',
+            fontFamily: 'inherit',
+            width: '100%',
+            textAlign: 'left',
+          }}
+        >
+          <LogOut size={17} style={{ color: A.muted, strokeWidth: 1.75 }} />
           <span>Wyloguj</span>
-        </Button>
+        </button>
       </div>
     </aside>
-  );
-};
-
-interface MagneticLinkProps {
-  to: string;
-  isActive: boolean;
-  isHovered: boolean;
-  onHoverStart: () => void;
-  onHoverEnd: () => void;
-  onClick: () => void;
-  children: React.ReactNode;
-}
-
-const MagneticLink = ({ to, isActive, isHovered, onHoverStart, onHoverEnd, onClick, children }: MagneticLinkProps) => {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const distanceX = e.clientX - centerX;
-    const distanceY = e.clientY - centerY;
-
-    setPosition({
-      x: distanceX * 0.3,
-      y: distanceY * 0.3,
-    });
-  };
-
-  const handleMouseLeave = () => {
-    setPosition({ x: 0, y: 0 });
-    onHoverEnd();
-  };
-
-  return (
-    <Link
-      to={to}
-      onClick={onClick}
-      onMouseMove={handleMouseMove}
-      onMouseEnter={onHoverStart}
-      onMouseLeave={handleMouseLeave}
-      className={cn(
-        "relative flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors duration-200 touch-manipulation",
-        isActive
-          ? "bg-primary text-primary-foreground"
-          : "text-foreground-secondary hover:bg-secondary hover:text-foreground"
-      )}
-    >
-      <motion.div
-        className="flex items-center gap-3 w-full"
-        animate={{
-          x: position.x,
-          y: position.y,
-        }}
-        transition={{
-          type: "spring",
-          stiffness: 150,
-          damping: 15,
-          mass: 0.1,
-        }}
-      >
-        {children}
-      </motion.div>
-    </Link>
   );
 };

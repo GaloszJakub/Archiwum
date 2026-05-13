@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.anthropic.com)",
+      "Bash(xxd \"C:\\\\Users\\\\Kuba\\\\.claude\\\\projects\\\\C--Users-Kuba-Documents-GitHub-Archiwum\\\\1d4d4ad3-3411-4167-9680-f4bada064c40\\\\tool-results\\\\webfetch-1776798253635-j3jt06.bin\")",
+      "Bash(cp \"C:\\\\Users\\\\Kuba\\\\.claude\\\\projects\\\\C--Users-Kuba-Documents-GitHub-Archiwum\\\\1d4d4ad3-3411-4167-9680-f4bada064c40\\\\tool-results\\\\webfetch-1776798253635-j3jt06.bin\" /tmp/design.bin.gz)",
+      "Bash(gunzip -f /tmp/design.bin.gz)",
+      "Read(//tmp/**)",
+      "Bash(tar -xf /tmp/design.bin -C /tmp/)",
+      "Bash(npm run *)",
+      "Bash(python3 *)",
+      "WebFetch(domain:claude.ai)",
+      "Bash(npx tsc *)",
+      "Bash(sed -i 's/style={{ flex: '\\\\''0 0 auto'\\\\'', width: 104 }}/style={{ flex: '\\\\''0 0 auto'\\\\'', width: 150 }}/g' src/pages/Movies.tsx src/pages/Series.tsx src/pages/Dashboard.tsx)",
+      "Bash(sed -i 's/style={{ flex: '\\\\''0 0 auto'\\\\'', width: 104, cursor: '\\\\''pointer'\\\\'' }}/style={{ flex: '\\\\''0 0 auto'\\\\'', width: 150, cursor: '\\\\''pointer'\\\\'' }}/g' src/pages/Dashboard.tsx)"
+    ]
+  }
+}

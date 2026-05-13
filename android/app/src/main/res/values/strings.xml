@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Archiwum</string>
+    <string name="title_activity_main">Archiwum</string>
+    <string name="package_name">com.archiwum.app</string>
+    <string name="custom_url_scheme">com.archiwum.app</string>
+</resources>

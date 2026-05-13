@@ -14,13 +14,13 @@ export const MovieDetailsHeader = ({ data }: MovieDetailsHeaderProps) => {
   const navigate = useNavigate();
 
   return (
-    <div className="relative h-[50vh] md:h-[60vh] -mx-6 lg:-mx-8 -mt-6 lg:-mt-8 mb-8 overflow-hidden">
+    <div className="relative h-[50vh] md:h-[60vh] mb-8 overflow-hidden">
       {/* Back Button */}
       <div className="absolute top-6 left-6 z-10">
         <Button
           variant="ghost"
           onClick={() => navigate('/movies')}
-          className="gap-2 bg-black/50 hover:bg-black/70 backdrop-blur-sm"
+          className="gap-2 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white"
         >
           <ArrowLeft className="w-4 h-4" />
           Powrót
@@ -33,14 +33,14 @@ export const MovieDetailsHeader = ({ data }: MovieDetailsHeaderProps) => {
         alt={data.title}
         className="w-full h-full object-cover object-top"
       />
-      <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #0a0a0c, rgba(10,10,12,0.5) 50%, transparent)' }} />
 
       {/* Title and Tagline */}
       <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8">
         <div className="max-w-4xl">
-          <h1 className="text-4xl md:text-6xl font-bold mb-4">{data.title}</h1>
+          <h1 className="text-4xl md:text-6xl font-bold mb-4" style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', color: '#f3efe6' }}>{data.title}</h1>
           {data.tagline && (
-            <p className="text-xl text-foreground-secondary italic mb-6">{data.tagline}</p>
+            <p className="text-xl italic mb-6" style={{ color: '#b8b1a3' }}>{data.tagline}</p>
           )}
         </div>
       </div>

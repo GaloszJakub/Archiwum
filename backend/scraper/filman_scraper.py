@@ -4,6 +4,7 @@ It uses undetected-chromedriver to bypass Cloudflare protection.
 """
 import os
 import re
+import subprocess
 import time
 import traceback
 import logging
@@ -97,33 +98,56 @@ class FilmanScraper:
         if self.debug:
             print(f"[FilmanScraper] {message}")
 
+    @staticmethod
+    def _detect_chrome_version() -> Optional[int]:
+        """Detects the installed Chrome major version from the system."""
+        chrome_paths = [
+            os.path.join(os.environ.get("PROGRAMFILES", ""), "Google", "Chrome", "Application", "chrome.exe"),
+            os.path.join(os.environ.get("PROGRAMFILES(X86)", ""), "Google", "Chrome", "Application", "chrome.exe"),
+            os.path.join(os.environ.get("LOCALAPPDATA", ""), "Google", "Chrome", "Application", "chrome.exe"),
+        ]
+        for path in chrome_paths:
+            if os.path.exists(path):
+                try:
+                    output = subprocess.check_output(
+                        ["powershell", "-NoProfile", "-Command",
+                         f'(Get-Item "{path}").VersionInfo.FileVersion'],
+                        text=True, timeout=10
+                    ).strip()
+                    major = int(output.split(".")[0])
+                    return major
+                except Exception:
+                    continue
+        return None
+
     def _init_driver(self):
         """Initializes the Chrome driver with undetected-chromedriver."""
         try:
-            self._log(f"Initializing Chrome driver with profile: {self.profile_dir}")
+            version_main = self._detect_chrome_version()
+            self._log(f"Initializing Chrome driver (detected Chrome v{version_main}) with profile: {self.profile_dir}")
 
             options = uc.ChromeOptions()
 
-            # Headless mode in uc is tricky, often detected. 
-            # If true, we add the argument, but be aware it might trigger detection.
             if self.headless:
                 options.add_argument('--headless=new')
                 options.add_argument('--window-size=1920,1080')
-                options.add_argument('--use-gl=desktop') # Force GPU hardware acceleration
+                options.add_argument('--use-gl=desktop')
 
             options.add_argument('--no-sandbox')
             options.add_argument('--disable-dev-shm-usage')
             
-            # Profile handling
             options.add_argument(f'--user-data-dir={self.profile_dir}')
             options.add_argument('--profile-directory=Default')
             
-            self.driver = uc.Chrome(options=options, use_subprocess=True)
+            self.driver = uc.Chrome(
+                options=options,
+                use_subprocess=True,
+                version_main=version_main,
+            )
             
             self._log("✓ Chrome driver initialized.")
         except Exception as e:
             self._log(f"✗ Failed to initialize driver: {e}")
-            # Ensure driver is None if initialization fails
             self.driver = None 
             raise
     

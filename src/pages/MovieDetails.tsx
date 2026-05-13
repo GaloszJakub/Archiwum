@@ -45,7 +45,7 @@ const MovieDetails = () => {
     >
       <MovieDetailsHeader data={data} />
 
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8 px-6 lg:px-8 pb-24">
         <MetaInfo data={data} />
 
         {data.genres && data.genres.length > 0 && (
@@ -63,9 +63,24 @@ const MovieDetails = () => {
 
         {isAdmin && <MovieLinksManager tmdbId={data.id} movieTitle={data.title} />}
 
-        <div className="bg-background-secondary rounded-xl p-6 lg:p-8">
-          <h2 className="text-2xl font-bold mb-4">Opis</h2>
-          <p className="text-foreground-secondary text-lg leading-relaxed">
+        <div
+          style={{
+            background: '#14141a',
+            border: '1px solid rgba(255,248,230,0.06)',
+            borderRadius: 8,
+            padding: '24px 28px',
+          }}
+        >
+          <h2 style={{ fontFamily: '"Inter Tight", sans-serif', fontSize: 18, fontWeight: 700, marginBottom: 12, color: '#f3efe6', letterSpacing: '-0.01em' }}>Opis</h2>
+          <p
+            style={{
+              fontFamily: '"Inter Tight", sans-serif',
+              fontSize: 16,
+              lineHeight: 1.75,
+              color: '#b8b1a3',
+              maxWidth: 800,
+            }}
+          >
             {data.overview || 'Brak opisu'}
           </p>
         </div>

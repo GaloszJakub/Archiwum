@@ -8,7 +8,7 @@ echo ============================================================
 echo.
 
 echo [*] Starting Flask API server...
-start "Scraper API" cmd /k "py app.py"
+start "Scraper API" cmd /k ""%LOCALAPPDATA%\Microsoft\WindowsApps\python3.exe" app.py"
 
 :: Wait for API to start
 echo [*] Waiting for API to start...

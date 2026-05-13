@@ -1,88 +1,62 @@
-import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Trash2, Edit2, FolderOpen } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
+import { Trash2, Heart } from 'lucide-react';
+import { tmdbService } from '@/lib/tmdb';
+import { Star } from 'lucide-react';
 import {
   useUserCollections,
+  useCollectionItems,
+  useRemoveFromCollection,
   useCreateCollection,
-  useDeleteCollection,
-  useUpdateCollection,
 } from '@/hooks/useCollections';
+
+const A = {
+  bg: '#0a0a0c',
+  surface: '#14141a',
+  border: 'rgba(255,248,230,0.06)',
+  border2: 'rgba(255,248,230,0.10)',
+  text: '#f3efe6',
+  text2: '#b8b1a3',
+  muted: '#847d6f',
+  subtle: '#58524a',
+  amber: '#d4a056',
+};
+
+const MY_LIST_NAME = 'Moja lista';
 
 const Collections = () => {
   const navigate = useNavigate();
-  const { data: collections, isLoading } = useUserCollections();
+  const { data: collections, isLoading: collectionsLoading } = useUserCollections();
   const createCollection = useCreateCollection();
-  const deleteCollection = useDeleteCollection();
-  const updateCollection = useUpdateCollection();
 
-  const [newCollectionName, setNewCollectionName] = useState('');
-  const [newCollectionDescription, setNewCollectionDescription] = useState('');
-  const [editingCollection, setEditingCollection] = useState<{ id: string; name: string; description?: string } | null>(null);
-  const [createDialogOpen, setCreateDialogOpen] = useState(false);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  // Find "Moja lista" or use first collection
+  const myList = collections?.find(c => c.name === MY_LIST_NAME) || collections?.[0];
+  const { data: items, isLoading: itemsLoading } = useCollectionItems(myList?.id || '');
+  const removeFromCollection = useRemoveFromCollection();
 
-  const handleCreate = async () => {
-    if (!newCollectionName.trim()) return;
+  const isLoading = collectionsLoading || itemsLoading;
 
+  const handleRemove = async (itemId: string) => {
+    if (!myList) return;
     try {
-      await createCollection.mutateAsync({
-        name: newCollectionName.trim(),
-        description: newCollectionDescription.trim() || undefined,
-      });
-      setNewCollectionName('');
-      setNewCollectionDescription('');
-      setCreateDialogOpen(false);
+      await removeFromCollection.mutateAsync({ collectionId: myList.id, itemId });
     } catch (error) {
-      console.error('Error creating collection:', error);
+      console.error('Error removing item:', error);
     }
   };
 
-  const handleUpdate = async () => {
-    if (!editingCollection || !editingCollection.name.trim()) return;
-
-    try {
-      await updateCollection.mutateAsync({
-        collectionId: editingCollection.id,
-        updates: {
-          name: editingCollection.name.trim(),
-          description: editingCollection.description?.trim() || undefined,
-        },
-      });
-      setEditingCollection(null);
-      setEditDialogOpen(false);
-    } catch (error) {
-      console.error('Error updating collection:', error);
-    }
-  };
-
-  const handleDelete = async (collectionId: string) => {
-    if (!confirm('Czy na pewno chcesz usunąć tę kolekcję? Wszystkie elementy zostaną usunięte.')) {
-      return;
-    }
-
-    try {
-      await deleteCollection.mutateAsync(collectionId);
-    } catch (error) {
-      console.error('Error deleting collection:', error);
+  const handleItemClick = (item: any) => {
+    if (item.type === 'movie') {
+      navigate(`/movie/${item.tmdbId}`);
+    } else {
+      navigate(`/series/${item.tmdbId}`);
     }
   };
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      <div style={{ display: 'flex', justifyContent: 'center', padding: '80px 0' }}>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2" style={{ borderColor: A.amber }} />
       </div>
     );
   }
@@ -91,180 +65,141 @@ const Collections = () => {
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      className="space-y-8"
+      style={{
+        padding: '32px 24px 100px',
+        fontFamily: '"Inter Tight", "Inter", -apple-system, BlinkMacSystemFont, system-ui, sans-serif',
+      }}
     >
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-4xl font-bold mb-2">Moje kolekcje</h1>
-          <p className="text-foreground-secondary">
-            Moje kolekcje
-          </p>
-        </div>
-
-        <Dialog open={createDialogOpen} onOpenChange={setCreateDialogOpen}>
-          <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Nowa kolekcja
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Utwórz kolekcję</DialogTitle>
-              <DialogDescription>
-                Nadaj nazwę swojej nowej kolekcji
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="name">Nazwa</Label>
-                <Input
-                  id="name"
-                  value={newCollectionName}
-                  onChange={(e) => setNewCollectionName(e.target.value)}
-                  placeholder="Nazwa"
-                  onKeyDown={(e) => e.key === 'Enter' && handleCreate()}
-                />
-              </div>
-              <div>
-                <Label htmlFor="description">Opis</Label>
-                <Input
-                  id="description"
-                  value={newCollectionDescription}
-                  onChange={(e) => setNewCollectionDescription(e.target.value)}
-                  placeholder="Opis kolekcji"
-                />
-              </div>
-              <Button
-                onClick={handleCreate}
-                disabled={!newCollectionName.trim() || createCollection.isPending}
-                className="w-full"
-              >
-                Zapisz
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+      {/* Header */}
+      <div style={{ marginBottom: 32 }}>
+        <h1
+          style={{
+            fontFamily: '"Instrument Serif", serif',
+            fontStyle: 'italic',
+            fontSize: 36,
+            fontWeight: 400,
+            color: A.text,
+            lineHeight: 1,
+            marginBottom: 8,
+          }}
+        >
+          Moja lista
+        </h1>
+        <p style={{ fontSize: 14, color: A.muted }}>
+          {items?.length || 0} {(items?.length || 0) === 1 ? 'pozycja' : 'pozycji'} zapisanych
+        </p>
       </div>
 
-      {!collections || collections.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-20 text-center">
-          <FolderOpen className="w-20 h-20 text-foreground-secondary mb-4" />
-          <h2 className="text-2xl font-bold mb-2">Brak kolekcji</h2>
-          <p className="text-foreground-secondary mb-6">
-            Utwórz swoją pierwszą kolekcję, aby zacząć organizować filmy i seriale
+      {/* Empty state */}
+      {(!items || items.length === 0) && (
+        <div
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '80px 20px',
+            textAlign: 'center',
+          }}
+        >
+          <Heart size={48} color={A.subtle} style={{ marginBottom: 16 }} />
+          <h2 style={{ fontSize: 20, fontWeight: 600, color: A.text, marginBottom: 8 }}>
+            Twoja lista jest pusta
+          </h2>
+          <p style={{ fontSize: 14, color: A.muted, maxWidth: 320 }}>
+            Dodawaj filmy i seriale do swojej listy, klikając przycisk "Moja lista" na stronie szczegółów
           </p>
-          <Button onClick={() => setCreateDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Utwórz pierwszą kolekcję
-          </Button>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {collections.map((collection) => (
-            <motion.div
-              key={collection.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="bg-background-secondary rounded-xl p-6 hover:bg-background-secondary/80 transition-colors cursor-pointer group"
-              onClick={() => navigate(`/collections/${collection.id}`)}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex-1">
-                  <h3 className="text-xl font-bold mb-1 group-hover:text-primary transition-colors">
-                    {collection.name}
-                  </h3>
-                  {collection.description && (
-                    <p className="text-sm text-foreground-secondary line-clamp-2">
-                      {collection.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-foreground-secondary">
-                  {collection.itemCount} {collection.itemCount === 1 ? 'element' : 'elementów'}
-                </span>
-
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setEditingCollection({
-                        id: collection.id,
-                        name: collection.name,
-                        description: collection.description,
-                      });
-                      setEditDialogOpen(true);
-                    }}
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    size="icon"
-                    variant="ghost"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(collection.id);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-            </motion.div>
-          ))}
         </div>
       )}
 
-      {/* Edit Dialog */}
-      <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edytuj kolekcję</DialogTitle>
-            <DialogDescription>
-              Zmień nazwę lub opis kolekcji
-            </DialogDescription>
-          </DialogHeader>
-          {editingCollection && (
-            <div className="space-y-4">
-              <div>
-                <Label htmlFor="edit-name">Nazwa</Label>
-                <Input
-                  id="edit-name"
-                  value={editingCollection.name}
-                  onChange={(e) =>
-                    setEditingCollection({ ...editingCollection, name: e.target.value })
-                  }
-                  placeholder="Nazwa"
-                />
-              </div>
-              <div>
-                <Label htmlFor="edit-description">Opis (opcjonalnie)</Label>
-                <Input
-                  id="edit-description"
-                  value={editingCollection.description || ''}
-                  onChange={(e) =>
-                    setEditingCollection({ ...editingCollection, description: e.target.value })
-                  }
-                  placeholder="Opis kolekcji"
-                />
-              </div>
-              <Button
-                onClick={handleUpdate}
-                disabled={!editingCollection.name.trim() || updateCollection.isPending}
-                className="w-full"
+      {/* Items grid */}
+      {items && items.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
+          {items.map((item) => (
+            <div key={item.id} className="group" style={{ cursor: 'pointer' }}>
+              <div
+                style={{ position: 'relative', borderRadius: 4, overflow: 'hidden' }}
+                onClick={() => handleItemClick(item)}
               >
-                Zapisz zmiany
-              </Button>
+                <img
+                  src={
+                    item.posterPath
+                      ? tmdbService.getImageUrl(item.posterPath, 'w500')
+                      : '/placeholder.svg'
+                  }
+                  alt={item.title}
+                  style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
+                  loading="lazy"
+                />
+
+                {/* Remove button on hover */}
+                <button
+                  onClick={(e) => { e.stopPropagation(); handleRemove(item.id); }}
+                  className="opacity-0 group-hover:opacity-100 transition-opacity"
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    background: 'rgba(10,10,12,0.8)',
+                    backdropFilter: 'blur(8px)',
+                    border: 'none',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                  aria-label="Usuń z listy"
+                >
+                  <Trash2 size={14} color="#ff6b6b" />
+                </button>
+
+                {/* Type badge */}
+                <div
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    left: 8,
+                    fontSize: 9,
+                    fontWeight: 600,
+                    letterSpacing: '0.06em',
+                    color: A.text2,
+                    padding: '2px 6px',
+                    borderRadius: 3,
+                    background: 'rgba(10,10,12,0.7)',
+                    backdropFilter: 'blur(6px)',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  {item.type === 'movie' ? 'FILM' : 'SERIAL'}
+                </div>
+              </div>
+
+              <div style={{ marginTop: 10 }} onClick={() => handleItemClick(item)}>
+                <div
+                  style={{
+                    fontFamily: '"Instrument Serif", serif',
+                    fontStyle: 'italic',
+                    fontSize: 15,
+                    color: A.text,
+                    lineHeight: 1.1,
+                    whiteSpace: 'nowrap',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                  }}
+                >
+                  {item.title}
+                </div>
+                <div style={{ fontSize: 11, color: A.muted, marginTop: 4 }}>
+                  {item.type === 'movie' ? 'Film' : 'Serial'}
+                </div>
+              </div>
             </div>
-          )}
-        </DialogContent>
-      </Dialog>
+          ))}
+        </div>
+      )}
     </motion.div>
   );
 };

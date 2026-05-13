@@ -46,3 +46,7 @@ backend/scraper/__pycache__/
 backend/scraper/build/
 backend/scraper/dist/
 
+
+# Capacitor native platforms (generated, can be recreated with `npx cap add`)
+# android/
+# ios/

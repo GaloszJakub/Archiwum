@@ -80,13 +80,13 @@ const SeriesDetails = () => {
       className="min-h-screen"
     >
       {/* Backdrop Image */}
-      <div className="relative h-[50vh] md:h-[60vh] -mx-6 lg:-mx-8 -mt-6 lg:-mt-8 mb-8 overflow-hidden">
+      <div className="relative h-[50vh] md:h-[60vh] mb-8 overflow-hidden">
         {/* Back Button Overlay */}
         <div className="absolute top-6 left-6 z-10">
           <Button
             variant="ghost"
             onClick={() => navigate('/series')}
-            className="gap-2 bg-black/50 hover:bg-black/70 backdrop-blur-sm"
+            className="gap-2 bg-black/50 hover:bg-black/70 backdrop-blur-sm text-white"
           >
             <ArrowLeft className="w-4 h-4" />
             Powrót
@@ -97,21 +97,21 @@ const SeriesDetails = () => {
           alt={data.name}
           className="w-full h-full object-cover object-top"
         />
-        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/50 to-transparent" />
+        <div className="absolute inset-0" style={{ background: 'linear-gradient(to top, #0a0a0c, rgba(10,10,12,0.5) 50%, transparent)' }} />
 
         {/* Title Overlay */}
         <div className="absolute bottom-0 left-0 right-0 p-6 lg:p-8">
           <div className="max-w-4xl">
-            <h1 className="text-4xl md:text-6xl font-bold mb-4">{data.name}</h1>
+            <h1 className="text-4xl md:text-6xl font-bold mb-4" style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', color: '#f3efe6' }}>{data.name}</h1>
             {data.tagline && (
-              <p className="text-xl text-foreground-secondary italic mb-6">{data.tagline}</p>
+              <p className="text-xl italic mb-6" style={{ color: '#b8b1a3' }}>{data.tagline}</p>
             )}
           </div>
         </div>
       </div>
 
       {/* Content */}
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8 px-6 lg:px-8 pb-24">
         {/* Meta Info */}
         <div className="flex flex-wrap items-center gap-6">
           <AddToCollectionButton
@@ -256,9 +256,9 @@ const SeriesDetails = () => {
         )}
 
         {/* Overview */}
-        <div className="bg-background-secondary rounded-xl p-6 lg:p-8">
-          <h2 className="text-2xl font-bold mb-4">Opis</h2>
-          <p className="text-foreground-secondary text-lg leading-relaxed">
+        <div style={{ background: '#14141a', border: '1px solid rgba(255,248,230,0.06)', borderRadius: 8, padding: '24px 28px' }}>
+          <h2 style={{ fontFamily: '"Inter Tight", sans-serif', fontSize: 18, fontWeight: 700, marginBottom: 12, color: '#f3efe6', letterSpacing: '-0.01em' }}>Opis</h2>
+          <p style={{ fontFamily: '"Inter Tight", sans-serif', fontSize: 16, lineHeight: 1.75, color: '#b8b1a3', maxWidth: 800 }}>
             {data.overview || 'Brak opisu'}
           </p>
         </div>

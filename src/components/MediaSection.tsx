@@ -43,7 +43,7 @@ export const MediaSection = ({ title, items, type, isLoading }: MediaSectionProp
     return (
         <section className="space-y-4 relative group">
             <div className="flex items-center justify-between px-1">
-                <h2 className="text-2xl font-bold">{title}</h2>
+                <h2 style={{ fontFamily: 'Caveat, cursive', fontSize: 22, fontWeight: 700, color: 'var(--ink)' }}>{title}</h2>
                 <div className="flex gap-2">
                     <Button
                         variant="outline"
