@@ -7,19 +7,12 @@ if (typeof window !== 'undefined') {
   const logs: string[] = [];
   const el = document.createElement('div');
   el.id = 'debug-console';
-  el.style.cssText = 'position:fixed;bottom:90px;left:8px;right:8px;max-height:200px;overflow:auto;background:rgba(0,0,0,0.9);color:#0f0;font:11px/1.4 monospace;padding:8px;border-radius:8px;z-index:99999;pointer-events:auto;display:none;';
+  el.style.cssText = 'position:fixed;bottom:90px;left:8px;right:8px;max-height:200px;overflow:auto;background:rgba(0,0,0,0.9);color:#0f0;font:11px/1.4 monospace;padding:8px;border-radius:8px;z-index:99999;pointer-events:auto;';
   document.body.appendChild(el);
 
-  // Toggle with 3 finger tap
-  let tapCount = 0;
-  document.addEventListener('touchstart', (e) => {
-    if (e.touches.length === 3) {
-      tapCount++;
-      if (tapCount >= 1) {
-        el.style.display = el.style.display === 'none' ? 'block' : 'none';
-        tapCount = 0;
-      }
-    }
+  // Toggle with long press on console
+  el.addEventListener('dblclick', () => {
+    el.style.display = 'none';
   });
 
   function addLog(type: string, msg: string) {
