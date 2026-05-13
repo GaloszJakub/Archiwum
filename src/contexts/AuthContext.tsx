@@ -1,7 +1,16 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { User, onAuthStateChanged, signInWithPopup, signOut as firebaseSignOut } from 'firebase/auth';
+import {
+  User,
+  onAuthStateChanged,
+  signInWithPopup,
+  signInWithCredential,
+  GoogleAuthProvider,
+  signOut as firebaseSignOut,
+} from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
 import { rolesService, UserRole } from '@/lib/roles';
+import { Capacitor } from '@capacitor/core';
+import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 interface AuthContextType {
   user: User | null;
@@ -30,23 +39,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
-      
+
       if (user) {
-        // Initialize user profile in Firestore
         await rolesService.initializeUserProfile(
           user.uid,
           user.email || '',
           user.displayName,
           user.photoURL
         );
-        
-        // Get user role
         const role = await rolesService.getUserRole(user.uid);
         setUserRole(role);
       } else {
         setUserRole(null);
       }
-      
+
       setLoading(false);
     });
 
@@ -55,7 +61,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = async () => {
     try {
-      await signInWithPopup(auth, googleProvider);
+      if (Capacitor.isNativePlatform()) {
+        // Native: use Capacitor Firebase plugin for native Google Sign-In
+        const result = await FirebaseAuthentication.signInWithGoogle();
+        // Get the ID token and create a credential for Firebase web SDK
+        const idToken = result.credential?.idToken;
+        if (idToken) {
+          const credential = GoogleAuthProvider.credential(idToken);
+          await signInWithCredential(auth, credential);
+        }
+      } else {
+        // Web: use popup
+        await signInWithPopup(auth, googleProvider);
+      }
     } catch (error) {
       console.error('Error signing in with Google:', error);
       throw error;
@@ -64,6 +82,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = async () => {
     try {
+      if (Capacitor.isNativePlatform()) {
+        await FirebaseAuthentication.signOut();
+      }
       await firebaseSignOut(auth);
     } catch (error) {
       console.error('Error signing out:', error);

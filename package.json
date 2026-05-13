@@ -17,7 +17,9 @@
     "cap:run": "npx cap run android"
   },
   "dependencies": {
+    "@capacitor-firebase/authentication": "8.2.0",
     "@capacitor/android": "8.3.4",
+    "@capacitor/browser": "8.0.3",
     "@capacitor/cli": "8.3.4",
     "@capacitor/core": "8.3.4",
     "@hookform/resolvers": "^3.10.0",

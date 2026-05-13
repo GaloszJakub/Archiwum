@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "57803144743",
+    "project_id": "archive-52697",
+    "storage_bucket": "archive-52697.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:57803144743:android:6047b2cf56a75bef849802",
+        "android_client_info": {
+          "package_name": "archiwum.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "57803144743-c5lran6eoe82d7siqnsvq89ebggaifoe.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAg8hvb1wJnkZ0xKCXegYmD2PCNAheLTqA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "57803144743-c5lran6eoe82d7siqnsvq89ebggaifoe.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
