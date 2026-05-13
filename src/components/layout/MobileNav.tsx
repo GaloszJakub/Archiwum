@@ -9,7 +9,7 @@ const A = {
 };
 
 const navItems = [
-  { path: '/', exact: true, Icon: House, label: 'Główna' },
+  { path: '/', exact: true, Icon: House, label: 'Strona główna' },
   { path: '/search', exact: false, Icon: MagnifyingGlass, label: 'Szukaj' },
   { path: '/movies', exact: false, Icon: FilmStrip, label: 'Filmy' },
   { path: '/collections', exact: false, Icon: Heart, label: 'Lista' },

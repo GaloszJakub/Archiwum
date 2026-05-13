@@ -28,10 +28,8 @@ export const TopBar = () => {
 
   return (
     <header
+      className="fixed top-0 right-0 left-0 lg:left-[260px] z-40"
       style={{
-        position: 'sticky',
-        top: 0,
-        zIndex: 30,
         background: 'rgba(10,10,12,0.85)',
         backdropFilter: 'blur(16px)',
         WebkitBackdropFilter: 'blur(16px)',

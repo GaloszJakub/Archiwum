@@ -3,13 +3,9 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, X, Star, Search } from 'lucide-react';
 import {
     useSearchTVShows,
-    usePopularTVShows,
     useDiscoverTVShows,
-    useOnTheAirTVShows,
-    useTopRatedTVShows,
 } from '@/hooks/useTMDB';
 import { tmdbService } from '@/lib/tmdb';
-import { useRecentlyWatched } from '@/hooks/useRecentlyWatched';
 
 const A = {
     bg: '#0a0a0c',
@@ -23,52 +19,6 @@ const A = {
     subtle: '#58524a',
     amber: '#d4a056',
 };
-
-function PosterRow({ items, onClickItem }: { items: any[]; onClickItem: (id: number) => void }) {
-    return (
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-            {items.map((show) => (
-                <div
-                    key={show.id}
-                    style={{ flex: '0 0 auto', width: 140, cursor: 'pointer' }}
-                    onClick={() => onClickItem(show.id)}
-                >
-                    <div style={{ borderRadius: 4, overflow: 'hidden' }}>
-                        <img
-                            src={tmdbService.getImageUrl(show.poster_path)}
-                            alt={show.name}
-                            style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
-                            loading="lazy"
-                        />
-                    </div>
-                    <div style={{ marginTop: 8 }}>
-                        <div style={{
-                            fontFamily: '"Instrument Serif", serif',
-                            fontStyle: 'italic',
-                            fontSize: 14,
-                            color: A.text,
-                            lineHeight: 1.1,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                        }}>{show.name}</div>
-                        <div style={{ fontSize: 11, color: A.muted, marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span>{show.first_air_date?.slice(0, 4)}</span>
-                            {show.vote_average > 0 && (
-                                <>
-                                    <span style={{ color: A.subtle }}>·</span>
-                                    <span style={{ color: A.amber, display: 'inline-flex', alignItems: 'center', gap: 2, fontFamily: '"JetBrains Mono", monospace' }}>
-                                        <Star size={9} fill={A.amber} color={A.amber} />{show.vote_average.toFixed(1)}
-                                    </span>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-}
 
 const Series = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -86,20 +36,8 @@ const Series = () => {
         }
     }, [searchParams]);
 
-    const hasFilters = !!selectedGenre;
-    const showGrid = debouncedQuery || hasFilters;
-
     const { data: searchData, isLoading: searchLoading, fetchNextPage: fetchNextSearch, hasNextPage: hasNextSearch, isFetchingNextPage: isFetchingSearch } = useSearchTVShows(debouncedQuery);
     const { data: discoverData, isLoading: discoverLoading, fetchNextPage: fetchNextDiscover, hasNextPage: hasNextDiscover, isFetchingNextPage: isFetchingDiscover } = useDiscoverTVShows({ with_genres: selectedGenre, sort_by: sortBy });
-
-    const { data: popularData } = usePopularTVShows();
-    const { data: onTheAirData } = useOnTheAirTVShows();
-    const { data: topRatedData } = useTopRatedTVShows();
-    const { data: scifiSeries } = useDiscoverTVShows({ with_genres: '10765' });
-    const { data: crimeSeries } = useDiscoverTVShows({ with_genres: '80' });
-    const { data: comedySeries } = useDiscoverTVShows({ with_genres: '35' });
-    const { data: dramaSeries } = useDiscoverTVShows({ with_genres: '18' });
-    const { data: recentlyWatched } = useRecentlyWatched();
 
     const gridItems = debouncedQuery
         ? (searchData?.pages.flatMap((p) => p.results) || [])
@@ -116,7 +54,6 @@ const Series = () => {
     }, [searchQuery]);
 
     useEffect(() => {
-        if (!showGrid) return;
         const observer = new IntersectionObserver(
             (entries) => { if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage(); },
             { threshold: 0.1 }
@@ -124,7 +61,7 @@ const Series = () => {
         const el = observerTarget.current;
         if (el) observer.observe(el);
         return () => { if (el) observer.unobserve(el); };
-    }, [showGrid, hasNextPage, isFetchingNextPage, fetchNextPage]);
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const quickGenres = [
         { id: '', name: 'Wszystkie' },
@@ -134,16 +71,6 @@ const Series = () => {
         { id: '10765', name: 'Sci-Fi' },
         { id: '16', name: 'Animacja' },
         { id: '99', name: 'Dokument' },
-    ];
-
-    const sections = [
-        { label: 'Popularne teraz', items: popularData?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Aktualnie emitowane', items: onTheAirData?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Najlepiej oceniane', items: topRatedData?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Sci-Fi i Fantasy', items: scifiSeries?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Kryminały', items: crimeSeries?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Komedie', items: comedySeries?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Dramaty', items: dramaSeries?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
     ];
 
     return (
@@ -250,126 +177,60 @@ const Series = () => {
             </div>
 
             {/* Content */}
-            {showGrid ? (
-                <div>
-                    {isGridLoading ? (
-                        <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
-                            <Loader2 className="animate-spin" size={28} color={A.amber} />
-                        </div>
-                    ) : gridItems.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '48px 0', color: A.muted, fontSize: 14 }}>
-                            Brak wyników
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
-                            {Array.from(new Map(gridItems.map((s) => [s.id, s])).values()).map((show) => (
-                                <div key={show.id} onClick={() => navigate(`/series/${show.id}`)} style={{ cursor: 'pointer' }}>
-                                    <div style={{ borderRadius: 4, overflow: 'hidden' }}>
-                                        <img
-                                            src={tmdbService.getImageUrl(show.poster_path)}
-                                            alt={show.name}
-                                            style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
-                                            loading="lazy"
-                                        />
-                                    </div>
-                                    <div style={{ marginTop: 8 }}>
-                                        <div style={{
-                                            fontFamily: '"Instrument Serif", serif',
-                                            fontStyle: 'italic',
-                                            fontSize: 14,
-                                            color: A.text,
-                                            lineHeight: 1.1,
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                        }}>{show.name}</div>
-                                        <div style={{ fontSize: 11, color: A.muted, marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <span>{show.first_air_date?.slice(0, 4)}</span>
-                                            {show.vote_average > 0 && (
-                                                <>
-                                                    <span style={{ color: A.subtle }}>·</span>
-                                                    <span style={{ color: A.amber, display: 'inline-flex', alignItems: 'center', gap: 2, fontFamily: '"JetBrains Mono", monospace' }}>
-                                                        <Star size={9} fill={A.amber} color={A.amber} />{show.vote_average.toFixed(1)}
-                                                    </span>
-                                                </>
-                                            )}
-                                        </div>
+            <div>
+                {isGridLoading ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+                        <Loader2 className="animate-spin" size={28} color={A.amber} />
+                    </div>
+                ) : gridItems.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '48px 0', color: A.muted, fontSize: 14 }}>
+                        Brak wyników
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+                        {Array.from(new Map(gridItems.map((s) => [s.id, s])).values()).map((show) => (
+                            <div key={show.id} onClick={() => navigate(`/series/${show.id}`)} style={{ cursor: 'pointer' }}>
+                                <div style={{ borderRadius: 4, overflow: 'hidden' }}>
+                                    <img
+                                        src={tmdbService.getImageUrl(show.poster_path)}
+                                        alt={show.name}
+                                        style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
+                                        loading="lazy"
+                                    />
+                                </div>
+                                <div style={{ marginTop: 8 }}>
+                                    <div style={{
+                                        fontFamily: '"Inter Tight", sans-serif',
+                                        fontWeight: 500,
+                                        fontSize: 14,
+                                        color: A.text,
+                                        lineHeight: 1.2,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                    }}>{show.name}</div>
+                                    <div style={{ fontSize: 11, color: A.muted, marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <span>{show.first_air_date?.slice(0, 4)}</span>
+                                        {show.vote_average > 0 && (
+                                            <>
+                                                <span style={{ color: A.subtle }}>·</span>
+                                                <span style={{ color: A.amber, display: 'inline-flex', alignItems: 'center', gap: 2, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                    <Star size={9} fill={A.amber} color={A.amber} />{show.vote_average.toFixed(1)}
+                                                </span>
+                                            </>
+                                        )}
                                     </div>
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                    {hasNextPage && (
-                        <div ref={observerTarget} style={{ display: 'flex', justifyContent: 'center', padding: '24px 0' }}>
-                            {isFetchingNextPage && <Loader2 className="animate-spin" size={24} color={A.amber} />}
-                        </div>
-                    )}
-                </div>
-            ) : (
-                /* Default view — horizontal rails */
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
-                    {/* Continue watching */}
-                    {recentlyWatched && recentlyWatched.length > 0 && (
-                        <section>
-                            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
-                                <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em', color: A.text }}>
-                                    Kontynuuj oglądanie
-                                </h2>
                             </div>
-                            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-                                {recentlyWatched.map((item) => (
-                                    <div
-                                        key={item.tmdbId}
-                                        style={{ flex: '0 0 auto', width: 140, cursor: 'pointer' }}
-                                        onClick={() => navigate(`/series/${item.tmdbId}`, {
-                                            state: { initialSeason: item.lastEpisode?.seasonNumber, initialEpisode: item.lastEpisode?.episodeNumber }
-                                        })}
-                                    >
-                                        <div style={{ borderRadius: 4, overflow: 'hidden' }}>
-                                            <img
-                                                src={tmdbService.getImageUrl(item.posterPath)}
-                                                alt={item.name}
-                                                style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
-                                                loading="lazy"
-                                            />
-                                        </div>
-                                        <div style={{ marginTop: 8 }}>
-                                            <div style={{
-                                                fontFamily: '"Instrument Serif", serif',
-                                                fontStyle: 'italic',
-                                                fontSize: 14,
-                                                color: A.text,
-                                                lineHeight: 1.1,
-                                                whiteSpace: 'nowrap',
-                                                overflow: 'hidden',
-                                                textOverflow: 'ellipsis',
-                                            }}>{item.name}</div>
-                                            {item.lastEpisode && (
-                                                <div style={{ fontSize: 11, color: A.muted, marginTop: 3 }}>
-                                                    S{item.lastEpisode.seasonNumber} · E{String(item.lastEpisode.episodeNumber).padStart(2, '0')}
-                                                </div>
-                                            )}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </section>
-                    )}
-
-                    {sections.map(({ label, items }) =>
-                        items.length === 0 ? null : (
-                            <section key={label}>
-                                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 14 }}>
-                                    <h2 style={{ margin: 0, fontSize: 20, fontWeight: 600, letterSpacing: '-0.015em', color: A.text }}>
-                                        {label}
-                                    </h2>
-                                </div>
-                                <PosterRow items={items} onClickItem={(id) => navigate(`/series/${id}`)} />
-                            </section>
-                        )
-                    )}
-                </div>
-            )}
+                        ))}
+                    </div>
+                )}
+                {hasNextPage && (
+                    <div ref={observerTarget} style={{ display: 'flex', justifyContent: 'center', padding: '24px 0' }}>
+                        {isFetchingNextPage && <Loader2 className="animate-spin" size={24} color={A.amber} />}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

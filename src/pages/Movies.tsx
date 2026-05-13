@@ -3,10 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Loader2, X, Star, Search } from 'lucide-react';
 import {
     useSearchMovies,
-    usePopularMovies,
     useDiscoverMovies,
-    useUpcomingMovies,
-    useTopRatedMovies,
 } from '@/hooks/useTMDB';
 import { tmdbService } from '@/lib/tmdb';
 
@@ -22,52 +19,6 @@ const A = {
     subtle: '#58524a',
     amber: '#d4a056',
 };
-
-function PosterRow({ items, onClickItem }: { items: any[]; onClickItem: (id: number) => void }) {
-    return (
-        <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-2">
-            {items.map((movie) => (
-                <div
-                    key={movie.id}
-                    style={{ flex: '0 0 auto', width: 140, cursor: 'pointer' }}
-                    onClick={() => onClickItem(movie.id)}
-                >
-                    <div style={{ borderRadius: 4, overflow: 'hidden' }}>
-                        <img
-                            src={tmdbService.getImageUrl(movie.poster_path)}
-                            alt={movie.title}
-                            style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
-                            loading="lazy"
-                        />
-                    </div>
-                    <div style={{ marginTop: 8 }}>
-                        <div style={{
-                            fontFamily: '"Instrument Serif", serif',
-                            fontStyle: 'italic',
-                            fontSize: 14,
-                            color: A.text,
-                            lineHeight: 1.1,
-                            whiteSpace: 'nowrap',
-                            overflow: 'hidden',
-                            textOverflow: 'ellipsis',
-                        }}>{movie.title}</div>
-                        <div style={{ fontSize: 11, color: A.muted, marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <span>{movie.release_date?.slice(0, 4)}</span>
-                            {movie.vote_average > 0 && (
-                                <>
-                                    <span style={{ color: A.subtle }}>·</span>
-                                    <span style={{ color: A.amber, display: 'inline-flex', alignItems: 'center', gap: 2, fontFamily: '"JetBrains Mono", monospace' }}>
-                                        <Star size={9} fill={A.amber} color={A.amber} />{movie.vote_average.toFixed(1)}
-                                    </span>
-                                </>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            ))}
-        </div>
-    );
-}
 
 const Movies = () => {
     const [searchQuery, setSearchQuery] = useState('');
@@ -85,20 +36,8 @@ const Movies = () => {
         }
     }, [searchParams]);
 
-    const hasFilters = !!selectedGenre;
-    const showGrid = debouncedQuery || hasFilters;
-
     const { data: searchData, isLoading: searchLoading, fetchNextPage: fetchNextSearch, hasNextPage: hasNextSearch, isFetchingNextPage: isFetchingSearch } = useSearchMovies(debouncedQuery);
     const { data: discoverData, isLoading: discoverLoading, fetchNextPage: fetchNextDiscover, hasNextPage: hasNextDiscover, isFetchingNextPage: isFetchingDiscover } = useDiscoverMovies({ with_genres: selectedGenre, sort_by: sortBy });
-
-    const { data: popularData } = usePopularMovies();
-    const { data: upcomingData } = useUpcomingMovies();
-    const { data: topRatedData } = useTopRatedMovies();
-    const { data: actionMovies } = useDiscoverMovies({ with_genres: '28' });
-    const { data: comedyMovies } = useDiscoverMovies({ with_genres: '35' });
-    const { data: horrorMovies } = useDiscoverMovies({ with_genres: '27' });
-    const { data: dramaMovies } = useDiscoverMovies({ with_genres: '18' });
-    const { data: scifiMovies } = useDiscoverMovies({ with_genres: '878' });
 
     const gridMovies = debouncedQuery
         ? (searchData?.pages.flatMap((p) => p.results) || [])
@@ -115,7 +54,6 @@ const Movies = () => {
     }, [searchQuery]);
 
     useEffect(() => {
-        if (!showGrid) return;
         const observer = new IntersectionObserver(
             (entries) => { if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) fetchNextPage(); },
             { threshold: 0.1 }
@@ -123,7 +61,7 @@ const Movies = () => {
         const el = observerTarget.current;
         if (el) observer.observe(el);
         return () => { if (el) observer.unobserve(el); };
-    }, [showGrid, hasNextPage, isFetchingNextPage, fetchNextPage]);
+    }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
     const quickGenres = [
         { id: '', name: 'Wszystkie' },
@@ -135,17 +73,6 @@ const Movies = () => {
         { id: '53', name: 'Thriller' },
         { id: '99', name: 'Dokument' },
         { id: '16', name: 'Animacja' },
-    ];
-
-    const sections = [
-        { label: 'Popularne teraz', items: popularData?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Nadchodzące premiery', items: upcomingData?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Najlepiej oceniane', items: topRatedData?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Kino Akcji', items: actionMovies?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Komedie', items: comedyMovies?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Horrory', items: horrorMovies?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Dramaty', items: dramaMovies?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
-        { label: 'Sci-Fi', items: scifiMovies?.pages.flatMap((p) => p.results).slice(0, 10) || [] },
     ];
 
     return (
@@ -252,87 +179,60 @@ const Movies = () => {
             </div>
 
             {/* Content */}
-            {showGrid ? (
-                <div>
-                    {isGridLoading ? (
-                        <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
-                            <Loader2 className="animate-spin" size={28} color={A.amber} />
-                        </div>
-                    ) : gridMovies.length === 0 ? (
-                        <div style={{ textAlign: 'center', padding: '48px 0', color: A.muted, fontSize: 14 }}>
-                            Brak wyników
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
-                            {Array.from(new Map(gridMovies.map((m) => [m.id, m])).values()).map((movie) => (
-                                <div key={movie.id} onClick={() => navigate(`/movie/${movie.id}`)} style={{ cursor: 'pointer' }}>
-                                    <div style={{ borderRadius: 4, overflow: 'hidden' }}>
-                                        <img
-                                            src={tmdbService.getImageUrl(movie.poster_path)}
-                                            alt={movie.title}
-                                            style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
-                                            loading="lazy"
-                                        />
-                                    </div>
-                                    <div style={{ marginTop: 8 }}>
-                                        <div style={{
-                                            fontFamily: '"Instrument Serif", serif',
-                                            fontStyle: 'italic',
-                                            fontSize: 14,
-                                            color: A.text,
-                                            lineHeight: 1.1,
-                                            whiteSpace: 'nowrap',
-                                            overflow: 'hidden',
-                                            textOverflow: 'ellipsis',
-                                        }}>{movie.title}</div>
-                                        <div style={{ fontSize: 11, color: A.muted, marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
-                                            <span>{movie.release_date?.slice(0, 4)}</span>
-                                            {movie.vote_average > 0 && (
-                                                <>
-                                                    <span style={{ color: A.subtle }}>·</span>
-                                                    <span style={{ color: A.amber, display: 'inline-flex', alignItems: 'center', gap: 2, fontFamily: '"JetBrains Mono", monospace' }}>
-                                                        <Star size={9} fill={A.amber} color={A.amber} />{movie.vote_average.toFixed(1)}
-                                                    </span>
-                                                </>
-                                            )}
-                                        </div>
-                                    </div>
+            <div>
+                {isGridLoading ? (
+                    <div style={{ display: 'flex', justifyContent: 'center', padding: '48px 0' }}>
+                        <Loader2 className="animate-spin" size={28} color={A.amber} />
+                    </div>
+                ) : gridMovies.length === 0 ? (
+                    <div style={{ textAlign: 'center', padding: '48px 0', color: A.muted, fontSize: 14 }}>
+                        Brak wyników
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-7 gap-3">
+                        {Array.from(new Map(gridMovies.map((m) => [m.id, m])).values()).map((movie) => (
+                            <div key={movie.id} onClick={() => navigate(`/movie/${movie.id}`)} style={{ cursor: 'pointer' }}>
+                                <div style={{ borderRadius: 4, overflow: 'hidden' }}>
+                                    <img
+                                        src={tmdbService.getImageUrl(movie.poster_path)}
+                                        alt={movie.title}
+                                        style={{ width: '100%', aspectRatio: '2/3', objectFit: 'cover', display: 'block' }}
+                                        loading="lazy"
+                                    />
                                 </div>
-                            ))}
-                        </div>
-                    )}
-                    {hasNextPage && (
-                        <div ref={observerTarget} style={{ display: 'flex', justifyContent: 'center', padding: '24px 0' }}>
-                            {isFetchingNextPage && <Loader2 className="animate-spin" size={24} color={A.amber} />}
-                        </div>
-                    )}
-                </div>
-            ) : (
-                /* Default view — horizontal rails by category */
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
-                    {sections.map(({ label, items }) =>
-                        items.length === 0 ? null : (
-                            <section key={label}>
-                                <div style={{
-                                    display: 'flex',
-                                    alignItems: 'baseline',
-                                    justifyContent: 'space-between',
-                                    marginBottom: 14,
-                                }}>
-                                    <h2 style={{
-                                        margin: 0,
-                                        fontSize: 20,
-                                        fontWeight: 600,
-                                        letterSpacing: '-0.015em',
+                                <div style={{ marginTop: 8 }}>
+                                    <div style={{
+                                        fontFamily: '"Inter Tight", sans-serif',
+                                        fontWeight: 500,
+                                        fontSize: 14,
                                         color: A.text,
-                                    }}>{label}</h2>
+                                        lineHeight: 1.2,
+                                        whiteSpace: 'nowrap',
+                                        overflow: 'hidden',
+                                        textOverflow: 'ellipsis',
+                                    }}>{movie.title}</div>
+                                    <div style={{ fontSize: 11, color: A.muted, marginTop: 3, display: 'flex', alignItems: 'center', gap: 4 }}>
+                                        <span>{movie.release_date?.slice(0, 4)}</span>
+                                        {movie.vote_average > 0 && (
+                                            <>
+                                                <span style={{ color: A.subtle }}>·</span>
+                                                <span style={{ color: A.amber, display: 'inline-flex', alignItems: 'center', gap: 2, fontFamily: '"JetBrains Mono", monospace' }}>
+                                                    <Star size={9} fill={A.amber} color={A.amber} />{movie.vote_average.toFixed(1)}
+                                                </span>
+                                            </>
+                                        )}
+                                    </div>
                                 </div>
-                                <PosterRow items={items} onClickItem={(id) => navigate(`/movie/${id}`)} />
-                            </section>
-                        )
-                    )}
-                </div>
-            )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+                {hasNextPage && (
+                    <div ref={observerTarget} style={{ display: 'flex', justifyContent: 'center', padding: '24px 0' }}>
+                        {isFetchingNextPage && <Loader2 className="animate-spin" size={24} color={A.amber} />}
+                    </div>
+                )}
+            </div>
         </div>
     );
 };

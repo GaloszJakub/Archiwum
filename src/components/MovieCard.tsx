@@ -26,7 +26,7 @@ export const MovieCard = memo(({ id, title, posterUrl, year, rating, layoutId, t
   return (
     <motion.div
       layoutId={layoutId}
-      className="group relative aspect-[2/3] overflow-hidden rounded-xl bg-[#14141a] cursor-pointer focus:outline-none border border-white/5 transition-colors duration-500 hover:border-[#d4a056]/40"
+      className="group relative aspect-[2/3] overflow-hidden rounded-none bg-[#14141a] cursor-pointer focus:outline-none border border-white/5 transition-colors duration-500"
       style={{
         boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
       }}
@@ -35,17 +35,24 @@ export const MovieCard = memo(({ id, title, posterUrl, year, rating, layoutId, t
       role="button"
       tabIndex={0}
       whileHover={{ 
-        scale: 1.04,
-        boxShadow: '0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(212, 160, 86, 0.15)',
+        y: -2,
+        x: -2,
+        boxShadow: '3px 3px 0px 0px rgba(212, 160, 86, 1)',
+        borderColor: 'rgba(212, 160, 86, 1)'
       }}
-      whileFocus={{ scale: 1.04, boxShadow: '0 0 0 2px rgba(212,160,86,0.5)' }}
-      transition={{ type: 'spring', stiffness: 350, damping: 25 }}
+      whileFocus={{ 
+        y: -2,
+        x: -2,
+        boxShadow: '3px 3px 0px 0px rgba(212, 160, 86, 1)',
+        borderColor: 'rgba(212, 160, 86, 1)'
+      }}
+      transition={{ type: 'spring', stiffness: 400, damping: 25 }}
     >
       <div className="w-full h-full relative">
         <img
           src={posterUrl}
           alt={title}
-          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
+          className="w-full h-full object-cover transition-all duration-500 ease-out group-hover:grayscale-[30%] group-hover:contrast-110"
           loading="lazy"
         />
 

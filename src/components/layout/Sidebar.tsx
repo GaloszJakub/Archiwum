@@ -37,7 +37,7 @@ export const Sidebar = ({ onClose, showCloseButton }: SidebarProps) => {
   };
 
   const navItems = [
-    { path: '/', exact: true, Icon: House, label: 'Główna' },
+    { path: '/', exact: true, Icon: House, label: 'Strona główna' },
     { path: '/search', exact: false, Icon: MagnifyingGlass, label: 'Wyszukiwarka' },
     { path: '/collections', exact: false, Icon: Heart, label: 'Moja lista' },
   ];
