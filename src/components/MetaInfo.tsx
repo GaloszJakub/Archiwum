@@ -1,7 +1,13 @@
 import { MovieDetails as MovieDetailsType } from '@/lib/tmdb';
-import { Star, Calendar, Clock } from 'lucide-react';
 import { AddToCollectionButton } from './AddToCollectionButton';
 import { ScraperButton } from './ScraperButton';
+
+const A = {
+  border: 'rgba(255,248,230,0.12)',
+  text: '#f3efe6',
+  text2: '#b8b1a3',
+  amber: '#d4a056',
+};
 
 interface MetaInfoProps {
   data: MovieDetailsType;
@@ -9,7 +15,7 @@ interface MetaInfoProps {
 
 export const MetaInfo = ({ data }: MetaInfoProps) => {
   return (
-    <div className="flex flex-wrap items-center gap-6">
+    <div className="flex flex-wrap items-center gap-4">
       <AddToCollectionButton
         tmdbId={data.id}
         type="movie"
@@ -25,29 +31,26 @@ export const MetaInfo = ({ data }: MetaInfoProps) => {
       />
       
       {data.vote_average > 0 && (
-        <div className="flex items-center gap-2 bg-primary/20 px-4 py-2 rounded-lg">
-          <Star className="w-5 h-5 text-primary fill-current" />
-          <span className="text-2xl font-bold">{data.vote_average.toFixed(1)}</span>
-          <span className="text-foreground-secondary text-sm">/ 10</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, border: `1px solid ${A.border}`, padding: '8px 16px', color: A.text }}>
+          <span style={{ color: A.amber }}>★</span>
+          <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 13 }}>{data.vote_average.toFixed(1)}</span>
         </div>
       )}
       
       {data.release_date && (
-        <div className="flex items-center gap-2 text-foreground-secondary">
-          <Calendar className="w-5 h-5" />
-          <span className="text-lg">{new Date(data.release_date).getFullYear()}</span>
+        <div style={{ border: `1px solid ${A.border}`, padding: '8px 16px', fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: A.text2 }}>
+          {new Date(data.release_date).getFullYear()}
         </div>
       )}
       
       {data.runtime && (
-        <div className="flex items-center gap-2 text-foreground-secondary">
-          <Clock className="w-5 h-5" />
-          <span className="text-lg">{data.runtime} min</span>
+        <div style={{ border: `1px solid ${A.border}`, padding: '8px 16px', fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: A.text2 }}>
+          {data.runtime} MIN
         </div>
       )}
       
       {data.status && (
-        <div className="px-4 py-2 bg-background-secondary rounded-lg text-lg">
+        <div style={{ border: `1px solid ${A.border}`, padding: '8px 16px', fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: A.text2, textTransform: 'uppercase' }}>
           {data.status}
         </div>
       )}

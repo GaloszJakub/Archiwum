@@ -1,7 +1,16 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { Crown, LogOut, Sun, Moon } from 'lucide-react';
+import { SignOut } from '@phosphor-icons/react';
 import { useTheme } from '@/contexts/ThemeContext';
+
+const A = {
+  bg: '#0a0a0c',
+  border: 'rgba(255,248,230,0.1)',
+  text: '#f3efe6',
+  text2: '#b8b1a3',
+  red: '#ef4444',
+  amber: '#d4a056',
+};
 
 const Profile = () => {
   const { user, isAdmin, signOut } = useAuth();
@@ -17,148 +26,162 @@ const Profile = () => {
     }
   };
 
-  const firstName = user?.displayName?.split(' ')[0] || 'Użytkownik';
-  const initial = firstName[0]?.toUpperCase() || 'U';
+  const initial = user?.displayName?.[0]?.toUpperCase() || 'U';
 
   const menuItems = [
-    { label: 'Informacje o koncie', sub: user?.email || '', icon: undefined, action: undefined },
-    { label: 'Wygląd', sub: theme === 'dark' ? 'Ciemny motyw' : 'Jasny motyw', icon: theme === 'dark' ? Sun : Moon, action: toggleTheme },
-    { label: 'Powiadomienia', sub: '', icon: undefined, action: undefined },
-    { label: 'Zainstaluj jako aplikację', sub: 'PWA', icon: undefined, action: undefined },
+    { label: 'Informacje o koncie', sub: user?.email || '', action: undefined },
+    { label: 'Wygląd interfejsu', sub: theme === 'dark' ? 'Tryb kinowy' : 'Tryb jasny', action: toggleTheme },
+    { label: 'Powiadomienia', sub: 'Zarządzaj powiadomieniami', action: undefined },
+    { label: 'Instalacja PWA', sub: 'Pobierz aplikację', action: undefined },
   ];
 
   if (isAdmin) {
-    menuItems.push({ label: 'Panel admina', sub: '', icon: Crown, action: () => navigate('/admin/users') });
+    menuItems.push({ label: 'Panel administracyjny', sub: 'Pełny dostęp', action: () => navigate('/admin/users') });
   }
 
   return (
-    <div className="space-y-6 pb-20 max-w-lg">
-      {/* Header */}
-      <h1 style={{ fontFamily: 'Inter, -apple-system, sans-serif', fontSize: 36, fontWeight: 700, color: 'var(--ink)', lineHeight: 1 }}>
-        Konto
-      </h1>
-
-      {/* Identity card */}
-      <div
-        className="flex items-center gap-4"
-        style={{ padding: '14px 16px', border: '2px solid var(--ink)', borderRadius: 4, background: 'var(--paper)' }}
-      >
+    <div 
+      className="pb-24 px-4 sm:px-14 pt-16 max-w-2xl mx-auto"
+      style={{
+        fontFamily: '"Inter Tight", "Inter", -apple-system, sans-serif',
+      }}
+    >
+      {/* Identity Area - No borders, pure typography */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 56 }}>
         <div
           style={{
-            width: 52,
-            height: 52,
-            borderRadius: 26,
-            border: '2px solid var(--line)',
+            width: 70,
+            height: 70,
+            background: 'linear-gradient(135deg, rgba(212,160,86,0.1) 0%, transparent 100%)',
+            border: `1px solid rgba(212,160,86,0.3)`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            fontFamily: 'Inter, -apple-system, sans-serif',
-            fontSize: 24,
-            fontWeight: 700,
-            color: 'var(--ink)',
+            fontFamily: '"Instrument Serif", serif',
+            fontSize: 32,
+            fontStyle: 'italic',
+            color: A.amber,
             flexShrink: 0,
+            boxShadow: '0 4px 20px rgba(212,160,86,0.05)',
           }}
         >
           {initial}
         </div>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontFamily: 'Inter, -apple-system, sans-serif', fontSize: 22, fontWeight: 700, color: 'var(--ink)' }}>
+        <div>
+          <h1 
+            style={{ 
+              fontSize: 34, 
+              fontWeight: 400, 
+              color: A.text, 
+              letterSpacing: '-0.02em',
+              margin: 0,
+              lineHeight: 1.1
+            }}
+          >
             {user?.displayName || 'Użytkownik'}
-          </div>
-          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--ink-3)' }}>
+          </h1>
+          <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2, marginTop: 6, letterSpacing: '0.02em' }}>
             {user?.email}
           </div>
           {isAdmin && (
-            <div
-              style={{
-                marginTop: 4,
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 4,
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: 10,
-                padding: '1px 8px',
-                border: '1.5px solid var(--ink)',
-                borderRadius: 3,
-                background: 'var(--ink)',
-                color: 'var(--paper)',
-              }}
-            >
-              <Crown style={{ width: 10, height: 10 }} />
-              Administrator
+            <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
+              <div style={{ width: 4, height: 4, background: A.amber }} />
+              <span style={{ fontSize: 11, color: A.amber, letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 600 }}>
+                Konto Administratora
+              </span>
             </div>
           )}
         </div>
       </div>
 
-      {/* Stats grid — wireframe ProfileV1 */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+      {/* Stats - No tiles, just elegant dividers */}
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        borderTop: `1px solid ${A.border}`, 
+        borderBottom: `1px solid ${A.border}`, 
+        padding: '32px 0',
+        marginBottom: 56
+      }}>
         {[
-          { n: '—', label: 'Filmy', color: 'var(--red)' },
-          { n: '—', label: 'Seriale', color: 'var(--blue)' },
-          { n: '—', label: 'Kolekcje', color: 'var(--ink)' },
-        ].map(({ n, label, color }) => (
-          <div key={label} style={{ border: '1.5px solid var(--line)', background: 'var(--paper)', padding: '10px 4px', textAlign: 'center' }}>
-            <div style={{ fontFamily: 'Inter, -apple-system, sans-serif', fontSize: 26, fontWeight: 700, color, lineHeight: 1.1 }}>{n}</div>
-            <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--ink-3)', letterSpacing: '0.04em' }}>{label}</div>
+          { n: '—', label: 'Filmy' },
+          { n: '—', label: 'Seriale' },
+          { n: '—', label: 'Kolekcje' },
+        ].map(({ n, label }) => (
+          <div key={label} style={{ flex: 1, textAlign: 'center' }}>
+            <div style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', fontSize: 36, color: A.text, lineHeight: 1 }}>{n}</div>
+            <div style={{ fontSize: 11, color: A.text2, marginTop: 12, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</div>
           </div>
         ))}
       </div>
 
-      {/* Menu */}
-      <div className="section-title" style={{ marginTop: 8 }}>Ustawienia</div>
-      <div style={{ border: '1.5px solid var(--line)', overflow: 'hidden' }}>
-        {menuItems.map(({ label, sub, icon: Icon, action }, i) => (
+      {/* Menu List - Editorial style */}
+      <div style={{ fontSize: 12, color: A.text2, textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 24, fontWeight: 500 }}>
+        Ustawienia konta
+      </div>
+      
+      <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {menuItems.map(({ label, sub, action }) => (
           <div
             key={label}
-            className="list-item-interactive flex items-center justify-between"
             role="button"
             tabIndex={0}
             onKeyDown={(e) => { if (e.key === 'Enter' && action) action(); }}
             style={{
-              padding: '0 14px',
-              minHeight: 52,
-              borderBottom: i < menuItems.length - 1 ? '1px dashed var(--line)' : 'none',
-              background: 'var(--paper)',
+              padding: '24px 0',
+              borderBottom: `1px solid ${A.border}`,
               display: 'flex',
               alignItems: 'center',
+              justifyContent: 'space-between',
               cursor: action ? 'pointer' : 'default',
             }}
             onClick={() => { if (action) action(); }}
+            className="group"
           >
-            <div className="flex items-center gap-3">
-              {Icon && <Icon style={{ width: 16, height: 16, color: 'var(--ink-3)', flexShrink: 0 }} />}
-              <div>
-                <span style={{ fontFamily: 'Inter, -apple-system, sans-serif', fontSize: 18, color: 'var(--ink)' }}>{label}</span>
-                {sub && (
-                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 10, color: 'var(--ink-3)', marginTop: 1 }}>
-                    {sub}
-                  </div>
-                )}
+            <div>
+              <div 
+                style={{ fontSize: 18, fontWeight: 400, color: A.text, transition: 'color 0.3s' }}
+                className={action ? "group-hover:text-[#d4a056]" : ""}
+              >
+                {label}
               </div>
+              {sub && (
+                <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2, marginTop: 8 }}>
+                  {sub}
+                </div>
+              )}
             </div>
-            {action && <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 14, color: 'var(--ink-3)' }}>›</span>}
+            {action && (
+              <span 
+                style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', fontSize: 24, color: A.text2, transition: 'transform 0.3s' }}
+                className="group-hover:translate-x-2 group-hover:text-[#d4a056]"
+              >
+                →
+              </span>
+            )}
           </div>
         ))}
       </div>
 
-      {/* Logout */}
-      <button
-        onClick={handleSignOut}
-        aria-label="Wyloguj się"
-        className="list-item-interactive flex items-center gap-3 w-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-1"
-        style={{
-          padding: '0 14px',
-          minHeight: 52,
-          border: '1.5px solid var(--line)',
-          borderRadius: 4,
-          background: 'var(--paper)',
-          touchAction: 'manipulation',
-        }}
-      >
-        <LogOut aria-hidden="true" style={{ width: 16, height: 16, color: 'var(--red)', flexShrink: 0 }} />
-        <span style={{ fontFamily: 'Inter, -apple-system, sans-serif', fontSize: 18, fontWeight: 700, color: 'var(--red)' }}>Wyloguj się</span>
-      </button>
+      {/* Logout - Minimalist text button */}
+      <div style={{ marginTop: 56 }}>
+        <button
+          onClick={handleSignOut}
+          className="group flex items-center gap-3 transition-opacity hover:opacity-70 active:opacity-50"
+          style={{
+            background: 'transparent',
+            border: 'none',
+            color: A.red,
+            cursor: 'pointer',
+            padding: 0,
+          }}
+        >
+          <SignOut size={20} weight="light" />
+          <span style={{ fontSize: 13, fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            Wyloguj ze wszystkich urządzeń
+          </span>
+        </button>
+      </div>
     </div>
   );
 };

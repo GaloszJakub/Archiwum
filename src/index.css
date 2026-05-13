@@ -363,4 +363,20 @@
     background: var(--paper);
     gap: 12px;
   }
+
+  /* Sidebar item luxury hover */
+  .sidebar-item {
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+  .sidebar-item:hover {
+    background: rgba(255, 255, 255, 0.04) !important;
+    color: var(--ink) !important;
+  }
+  .sidebar-item:hover svg {
+    color: var(--ink) !important;
+    transform: scale(1.08);
+  }
+  .sidebar-item svg {
+    transition: transform 0.4s cubic-bezier(0.25, 1, 0.5, 1), color 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+  }
 }

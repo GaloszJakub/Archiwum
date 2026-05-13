@@ -1,7 +1,5 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Shield, User, Crown } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
@@ -15,6 +13,14 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+const A = {
+  bg: '#0a0a0c',
+  border: 'rgba(255,248,230,0.12)',
+  text: '#f3efe6',
+  text2: '#b8b1a3',
+  amber: '#d4a056',
+};
+
 const AdminUsers = () => {
   const { isAdmin } = useAuth();
   const navigate = useNavigate();
@@ -26,7 +32,6 @@ const AdminUsers = () => {
       navigate('/');
       return;
     }
-
     loadUsers();
   }, [isAdmin, navigate]);
 
@@ -73,7 +78,9 @@ const AdminUsers = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <div style={{ fontFamily: '"JetBrains Mono", monospace', color: A.amber, fontSize: 12, letterSpacing: '0.1em' }} className="animate-pulse">
+          ŁADOWANIE BAZY DANYCH...
+        </div>
       </div>
     );
   }
@@ -83,75 +90,87 @@ const AdminUsers = () => {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="space-y-8"
+      className="pb-24 px-4 sm:px-14 pt-16 max-w-6xl mx-auto"
+      style={{ fontFamily: '"Inter Tight", "Inter", -apple-system, sans-serif' }}
     >
-      <div className="flex items-center gap-3">
-        <Shield className="w-8 h-8 text-primary" />
-        <div>
-          <h1 className="text-4xl font-bold">Zarządzanie użytkownikami</h1>
-          <p className="text-foreground-secondary">Panel Administratora</p>
+      <div style={{ marginBottom: 56 }}>
+        <h1 
+          style={{ 
+            fontSize: 34, 
+            fontWeight: 400, 
+            color: A.text, 
+            letterSpacing: '-0.02em',
+            margin: 0,
+            lineHeight: 1.1
+          }}
+        >
+          Zarządzanie Użytkownikami
+        </h1>
+        <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.amber, marginTop: 8, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+          Panel Administratora
         </div>
       </div>
 
-      <div className="bg-background-secondary rounded-xl overflow-hidden">
+      <div style={{ borderTop: `1px solid ${A.border}` }}>
         <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-background border-b border-border">
-              <tr>
-                <th className="text-left p-4 font-semibold">Użytkownik</th>
-                <th className="text-left p-4 font-semibold">Email</th>
-                <th className="text-left p-4 font-semibold">Rola</th>
-                <th className="text-left p-4 font-semibold">Utworzono</th>
-                <th className="text-left p-4 font-semibold">Ostatnie logowanie</th>
+          <table className="w-full text-left" style={{ borderCollapse: 'collapse' }}>
+            <thead>
+              <tr style={{ borderBottom: `1px solid ${A.border}` }}>
+                <th style={{ padding: '24px 0', fontWeight: 500, fontSize: 12, color: A.text2, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Użytkownik</th>
+                <th style={{ padding: '24px 0', fontWeight: 500, fontSize: 12, color: A.text2, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Adres Email</th>
+                <th style={{ padding: '24px 0', fontWeight: 500, fontSize: 12, color: A.text2, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Poziom Dostępu</th>
+                <th style={{ padding: '24px 0', fontWeight: 500, fontSize: 12, color: A.text2, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Utworzono</th>
+                <th style={{ padding: '24px 0', fontWeight: 500, fontSize: 12, color: A.text2, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ostatnie logowanie</th>
               </tr>
             </thead>
             <tbody>
               {users.map((user) => (
-                <tr key={user.uid} className="border-b border-border hover:bg-background/50">
-                  <td className="p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
-                        {user.role === 'admin' ? (
-                          <Crown className="w-5 h-5 text-primary" />
-                        ) : (
-                          <User className="w-5 h-5 text-foreground-secondary" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium">{user.displayName || 'Brak nazwy'}</p>
-                        <p className="text-xs text-foreground-secondary">{user.uid.slice(0, 8)}...</p>
-                      </div>
+                <tr key={user.uid} style={{ borderBottom: `1px solid ${A.border}`, transition: 'background 0.2s' }} className="hover:bg-white/5">
+                  <td style={{ padding: '20px 0' }}>
+                    <div style={{ fontSize: 15, fontWeight: 500, color: A.text, letterSpacing: '-0.01em' }}>
+                      {user.displayName || 'Brak nazwy'}
+                    </div>
+                    <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: A.text2, marginTop: 4 }}>
+                      ID: {user.uid.slice(0, 8)}...
                     </div>
                   </td>
-                  <td className="p-4 text-foreground-secondary">{user.email}</td>
-                  <td className="p-4">
+                  <td style={{ padding: '20px 0', fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: A.text }}>
+                    {user.email}
+                  </td>
+                  <td style={{ padding: '20px 0' }}>
                     <Select
                       value={user.role}
                       onValueChange={(value) => handleRoleChange(user.uid, value as UserRole)}
                     >
-                      <SelectTrigger className="w-32">
+                      <SelectTrigger 
+                        className="w-32 focus:ring-0 focus:ring-offset-0"
+                        style={{ 
+                          borderRadius: 0, 
+                          border: `1px solid ${A.border}`, 
+                          background: 'transparent',
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: 11,
+                          textTransform: 'uppercase',
+                          color: user.role === 'admin' ? A.amber : A.text,
+                          height: 36
+                        }}
+                      >
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">
-                          <div className="flex items-center gap-2">
-                            <User className="w-4 h-4" />
-                            User
-                          </div>
+                      <SelectContent style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: '#0a0a0c' }}>
+                        <SelectItem value="user" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, textTransform: 'uppercase', borderRadius: 0 }}>
+                          User
                         </SelectItem>
-                        <SelectItem value="admin">
-                          <div className="flex items-center gap-2">
-                            <Crown className="w-4 h-4" />
-                            Admin
-                          </div>
+                        <SelectItem value="admin" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, textTransform: 'uppercase', borderRadius: 0, color: A.amber }}>
+                          Admin
                         </SelectItem>
                       </SelectContent>
                     </Select>
                   </td>
-                  <td className="p-4 text-foreground-secondary text-sm">
+                  <td style={{ padding: '20px 0', fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2 }}>
                     {user.createdAt.toLocaleDateString('pl-PL')}
                   </td>
-                  <td className="p-4 text-foreground-secondary text-sm">
+                  <td style={{ padding: '20px 0', fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2 }}>
                     {user.lastLogin.toLocaleDateString('pl-PL')}
                   </td>
                 </tr>
@@ -161,17 +180,16 @@ const AdminUsers = () => {
         </div>
       </div>
 
-      <div className="bg-primary/10 border border-primary/20 rounded-xl p-6">
-        <h3 className="font-semibold mb-2 flex items-center gap-2">
-          <Shield className="w-5 h-5" />
-          Informacje o rolach
-        </h3>
-        <ul className="space-y-2 text-sm text-foreground-secondary">
-          <li>• <strong>User</strong> - Standardowy użytkownik z dostępem do filmów, seriali i kolekcji</li>
-          <li>• <strong>Admin</strong> - Pełny dostęp + zarządzanie użytkownikami</li>
-        </ul>
+      <div style={{ marginTop: 56, borderTop: `1px solid ${A.border}`, paddingTop: 32 }}>
+        <div style={{ fontSize: 12, color: A.text2, textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 16, fontWeight: 500 }}>
+          Informacje systemowe
+        </div>
+        <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2, lineHeight: 1.8 }}>
+          <div><span style={{ color: A.text }}>[USER]</span> - Ograniczony dostęp (katalog, kolekcje)</div>
+          <div><span style={{ color: A.amber }}>[ADMIN]</span> - Pełne uprawnienia operacyjne</div>
+        </div>
       </div>
-    </motion.div >
+    </motion.div>
   );
 };
 

@@ -1,4 +1,4 @@
-import { Star } from 'lucide-react';
+import { Star } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { usePopularMovies, usePopularTVShows, useTrendingMovies } from '@/hooks/useTMDB';
 import { useRecentlyWatched } from '@/hooks/useRecentlyWatched';
@@ -161,21 +161,25 @@ const Dashboard = () => {
                   display: 'inline-flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  gap: 8,
-                  height: 44,
-                  padding: '0 24px',
-                  borderRadius: 10,
-                  background: A.text,
-                  color: A.bg,
-                  border: 'none',
-                  fontSize: 15,
+                  height: 50,
+                  padding: '0 40px',
+                  borderRadius: 999,
+                  background: 'rgba(255, 255, 255, 0.05)',
+                  color: A.text,
+                  border: `1px solid rgba(255, 255, 255, 0.15)`,
+                  fontSize: 12,
                   fontWeight: 600,
                   fontFamily: 'inherit',
                   cursor: 'pointer',
-                  letterSpacing: '-0.01em',
+                  letterSpacing: '0.12em',
+                  textTransform: 'uppercase',
+                  backdropFilter: 'blur(10px)',
+                  WebkitBackdropFilter: 'blur(10px)',
+                  transition: 'all 0.3s ease',
                 }}
+                className="hover:bg-[rgba(255,255,255,0.15)] hover:border-[rgba(255,255,255,0.4)] active:scale-[0.98]"
               >
-                Więcej info
+                Więcej informacji
               </button>
             </div>
           </div>

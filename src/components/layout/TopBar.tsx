@@ -1,4 +1,4 @@
-import { Search, X } from 'lucide-react';
+import { MagnifyingGlass, X } from '@phosphor-icons/react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useState } from 'react';
@@ -6,10 +6,13 @@ import { useState } from 'react';
 const A = {
   bg: '#0a0a0c',
   surface: '#14141a',
+  surface2: '#1c1c23',
   border: 'rgba(255,248,230,0.06)',
+  border2: 'rgba(255,248,230,0.10)',
   text: '#f3efe6',
   text2: '#b8b1a3',
   muted: '#847d6f',
+  amber: '#d4a056',
 };
 
 export const TopBar = () => {
@@ -44,18 +47,20 @@ export const TopBar = () => {
       <div
         style={{
           flex: 1,
-          maxWidth: 520,
+          maxWidth: 580,
           display: 'flex',
           alignItems: 'center',
           gap: 10,
           padding: '0 14px',
-          height: 38,
+          height: 40,
           background: A.surface,
           border: `1px solid ${A.border}`,
           borderRadius: 999,
+          transition: 'all 0.2s ease',
         }}
+        className="focus-within:border-[var(--amber)] focus-within:shadow-[0_0_0_1px_var(--amber)]"
       >
-        <Search size={16} color={A.muted} />
+        <MagnifyingGlass size={18} weight="bold" color={A.muted} />
         <input
           type="text"
           placeholder="Szukaj w bibliotece…"
@@ -68,7 +73,7 @@ export const TopBar = () => {
             border: 'none',
             outline: 'none',
             color: A.text,
-            fontSize: 13.5,
+            fontSize: 14,
             fontFamily: 'inherit',
           }}
         />
@@ -77,7 +82,7 @@ export const TopBar = () => {
             onClick={() => setSearchQuery('')}
             style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
           >
-            <X size={14} color={A.muted} />
+            <X size={14} weight="bold" color={A.muted} />
           </button>
         )}
       </div>
@@ -121,3 +126,4 @@ export const TopBar = () => {
     </header>
   );
 };
+
