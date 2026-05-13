@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.archiwum.app',
+  appId: 'archiwum.app',
   appName: 'Archiwum',
   webDir: 'dist',
   server: {
