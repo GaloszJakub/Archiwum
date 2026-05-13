@@ -48,7 +48,13 @@ jobs:
         run: |
           cd android
           chmod +x gradlew
+          ./gradlew signingReport
           ./gradlew assembleDebug
+
+      - name: Print debug SHA-1
+        run: |
+          cd android
+          ./gradlew signingReport 2>/dev/null | grep -A 1 "SHA1"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
