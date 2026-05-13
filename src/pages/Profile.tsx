@@ -1,7 +1,6 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { SignOut } from '@phosphor-icons/react';
-import { useTheme } from '@/contexts/ThemeContext';
 
 const A = {
   bg: '#0a0a0c',
@@ -15,7 +14,6 @@ const A = {
 const Profile = () => {
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
-  const { theme, toggleTheme } = useTheme();
 
   const handleSignOut = async () => {
     try {
@@ -30,9 +28,6 @@ const Profile = () => {
 
   const menuItems = [
     { label: 'Informacje o koncie', sub: user?.email || '', action: undefined },
-    { label: 'Wygląd interfejsu', sub: theme === 'dark' ? 'Tryb kinowy' : 'Tryb jasny', action: toggleTheme },
-    { label: 'Powiadomienia', sub: 'Zarządzaj powiadomieniami', action: undefined },
-    { label: 'Instalacja PWA', sub: 'Pobierz aplikację', action: undefined },
   ];
 
   if (isAdmin) {
@@ -94,26 +89,8 @@ const Profile = () => {
         </div>
       </div>
 
-      {/* Stats - No tiles, just elegant dividers */}
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'space-between', 
-        borderTop: `1px solid ${A.border}`, 
-        borderBottom: `1px solid ${A.border}`, 
-        padding: '32px 0',
-        marginBottom: 56
-      }}>
-        {[
-          { n: '—', label: 'Filmy' },
-          { n: '—', label: 'Seriale' },
-          { n: '—', label: 'Kolekcje' },
-        ].map(({ n, label }) => (
-          <div key={label} style={{ flex: 1, textAlign: 'center' }}>
-            <div style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', fontSize: 36, color: A.text, lineHeight: 1 }}>{n}</div>
-            <div style={{ fontSize: 11, color: A.text2, marginTop: 12, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</div>
-          </div>
-        ))}
-      </div>
+
+
 
       {/* Menu List - Editorial style */}
       <div style={{ fontSize: 12, color: A.text2, textTransform: 'uppercase', letterSpacing: '0.15em', marginBottom: 24, fontWeight: 500 }}>
