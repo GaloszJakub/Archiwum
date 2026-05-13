@@ -44,17 +44,26 @@ jobs:
           distribution: 'temurin'
           java-version: '21'
 
+      - name: Setup debug keystore
+        run: |
+          mkdir -p ~/.android
+          if [ -n "${{ secrets.DEBUG_KEYSTORE }}" ]; then
+            echo "${{ secrets.DEBUG_KEYSTORE }}" | base64 -d > ~/.android/debug.keystore
+          else
+            keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebug -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Archiwum,OU=Dev,O=Archiwum,L=PL,ST=PL,C=PL"
+          fi
+          echo "Debug keystore SHA-1:"
+          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebug -storepass android | grep SHA1
+          echo ""
+          echo "Base64 keystore (add as DEBUG_KEYSTORE secret to keep SHA-1 stable):"
+          base64 -w 0 ~/.android/debug.keystore
+          echo ""
+
       - name: Build APK
         run: |
           cd android
           chmod +x gradlew
-          ./gradlew signingReport
           ./gradlew assembleDebug
-
-      - name: Print debug SHA-1
-        run: |
-          cd android
-          ./gradlew signingReport 2>/dev/null | grep -A 1 "SHA1"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4

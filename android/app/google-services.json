@@ -14,11 +14,11 @@
       },
       "oauth_client": [
         {
-          "client_id": "57803144743-5t41djrk01seb70elu1k65j41jj6vfhi.apps.googleusercontent.com",
+          "client_id": "57803144743-41tr0hltjel6dkpr7os9a27svhcpsalb.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
             "package_name": "archiwum.app",
-            "certificate_hash": "d2e9607bc540b88cb640845a776d1e28fc562173"
+            "certificate_hash": "0389d20b78379f0ee3938b452777172ea9f62962"
           }
         },
         {
