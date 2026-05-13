@@ -60,21 +60,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signInWithGoogle = async () => {
     if (Capacitor.isNativePlatform()) {
-      // Native: use @capacitor-firebase/authentication
-      const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-      const result = await FirebaseAuthentication.signInWithGoogle({
-        scopes: ['profile', 'email'],
-      });
-      const idToken = result.credential?.idToken;
-      const accessToken = result.credential?.accessToken;
-      if (idToken) {
-        const credential = GoogleAuthProvider.credential(idToken, accessToken);
-        await signInWithCredential(auth, credential);
-      } else {
-        throw new Error('No ID token received from Google Sign-In');
+      try {
+        console.log('Starting native Google Sign-In...');
+        const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+        const result = await FirebaseAuthentication.signInWithGoogle({
+          scopes: ['profile', 'email'],
+        });
+        console.log('Google Sign-In result:', JSON.stringify(result));
+        const idToken = result.credential?.idToken;
+        const accessToken = result.credential?.accessToken;
+        if (idToken) {
+          console.log('Got idToken, signing into Firebase...');
+          const credential = GoogleAuthProvider.credential(idToken, accessToken);
+          await signInWithCredential(auth, credential);
+          console.log('Firebase sign-in success');
+        } else {
+          throw new Error('No ID token received from Google Sign-In');
+        }
+      } catch (error: any) {
+        console.error('Native sign-in error:', JSON.stringify(error), error?.message, error?.code);
+        throw error;
       }
     } else {
-      // Web: use popup
       await signInWithPopup(auth, googleProvider);
     }
   };

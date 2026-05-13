@@ -26,12 +26,20 @@ if (typeof window !== 'undefined') {
   const origConsoleLog = console.log;
   const origConsoleWarn = console.warn;
 
-  console.error = (...args) => { addLog('ERR', args.map(String).join(' ')); origConsoleError(...args); };
-  console.warn = (...args) => { addLog('WRN', args.map(String).join(' ')); origConsoleWarn(...args); };
-  console.log = (...args) => { addLog('LOG', args.map(String).join(' ')); origConsoleLog(...args); };
+  function stringify(arg: any): string {
+    if (arg === null) return 'null';
+    if (arg === undefined) return 'undefined';
+    if (typeof arg === 'string') return arg;
+    if (arg instanceof Error) return `${arg.name}: ${arg.message}\n${arg.stack || ''}`;
+    try { return JSON.stringify(arg, null, 1); } catch { return String(arg); }
+  }
+
+  console.error = (...args) => { addLog('ERR', args.map(stringify).join(' ')); origConsoleError(...args); };
+  console.warn = (...args) => { addLog('WRN', args.map(stringify).join(' ')); origConsoleWarn(...args); };
+  console.log = (...args) => { addLog('LOG', args.map(stringify).join(' ')); origConsoleLog(...args); };
 
   window.addEventListener('error', (e) => addLog('ERR', e.message));
-  window.addEventListener('unhandledrejection', (e) => addLog('ERR', String(e.reason)));
+  window.addEventListener('unhandledrejection', (e) => addLog('ERR', stringify(e.reason)));
 }
 
 createRoot(document.getElementById("root")!).render(<App />);
