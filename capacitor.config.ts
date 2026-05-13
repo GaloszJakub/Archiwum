@@ -5,13 +5,16 @@ const config: CapacitorConfig = {
   appName: 'Archiwum',
   webDir: 'dist',
   server: {
-    // Uncomment for live reload during development:
-    // url: 'http://192.168.x.x:5173',
-    // cleartext: true,
     androidScheme: 'https',
   },
   android: {
     backgroundColor: '#0a0a0c',
+  },
+  plugins: {
+    FirebaseAuthentication: {
+      skipNativeAuth: false,
+      providers: ['google.com'],
+    },
   },
 };
 

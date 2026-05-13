@@ -10,7 +10,6 @@ import {
 import { auth, googleProvider } from '@/lib/firebase';
 import { rolesService, UserRole } from '@/lib/roles';
 import { Capacitor } from '@capacitor/core';
-import { FirebaseAuthentication } from '@capacitor-firebase/authentication';
 
 interface AuthContextType {
   user: User | null;
@@ -60,29 +59,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signInWithGoogle = async () => {
-    try {
-      if (Capacitor.isNativePlatform()) {
-        // Native: use Capacitor Firebase plugin for native Google Sign-In
-        const result = await FirebaseAuthentication.signInWithGoogle();
-        // Get the ID token and create a credential for Firebase web SDK
-        const idToken = result.credential?.idToken;
-        if (idToken) {
-          const credential = GoogleAuthProvider.credential(idToken);
-          await signInWithCredential(auth, credential);
-        }
+    if (Capacitor.isNativePlatform()) {
+      // Native: use @capacitor-firebase/authentication
+      const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+      const result = await FirebaseAuthentication.signInWithGoogle({
+        scopes: ['profile', 'email'],
+      });
+      const idToken = result.credential?.idToken;
+      const accessToken = result.credential?.accessToken;
+      if (idToken) {
+        const credential = GoogleAuthProvider.credential(idToken, accessToken);
+        await signInWithCredential(auth, credential);
       } else {
-        // Web: use popup
-        await signInWithPopup(auth, googleProvider);
+        throw new Error('No ID token received from Google Sign-In');
       }
-    } catch (error) {
-      console.error('Error signing in with Google:', error);
-      throw error;
+    } else {
+      // Web: use popup
+      await signInWithPopup(auth, googleProvider);
     }
   };
 
   const signOut = async () => {
     try {
       if (Capacitor.isNativePlatform()) {
+        const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
         await FirebaseAuthentication.signOut();
       }
       await firebaseSignOut(auth);

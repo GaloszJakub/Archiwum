@@ -2,6 +2,7 @@
 <resources>
     <string name="app_name">Archiwum</string>
     <string name="title_activity_main">Archiwum</string>
-    <string name="package_name">com.archiwum.app</string>
-    <string name="custom_url_scheme">com.archiwum.app</string>
+    <string name="package_name">archiwum.app</string>
+    <string name="custom_url_scheme">archiwum.app</string>
+    <string name="server_client_id">57803144743-c5lran6eoe82d7siqnsvq89ebggaifoe.apps.googleusercontent.com</string>
 </resources>
