@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom';
-import { Home, Film, FolderHeart, Tv } from 'lucide-react';
+import { House, FilmStrip, Heart, Television, MagnifyingGlass } from '@phosphor-icons/react';
 
 const A = {
   bg: '#0a0a0c',
@@ -9,10 +9,11 @@ const A = {
 };
 
 const navItems = [
-  { path: '/', exact: true, Icon: Home, label: 'Główna' },
-  { path: '/movies', exact: false, Icon: Film, label: 'Filmy' },
-  { path: '/collections', exact: false, Icon: FolderHeart, label: 'Moja lista' },
-  { path: '/series', exact: false, Icon: Tv, label: 'Seriale' },
+  { path: '/', exact: true, Icon: House, label: 'Główna' },
+  { path: '/search', exact: false, Icon: MagnifyingGlass, label: 'Szukaj' },
+  { path: '/movies', exact: false, Icon: FilmStrip, label: 'Filmy' },
+  { path: '/collections', exact: false, Icon: Heart, label: 'Lista' },
+  { path: '/series', exact: false, Icon: Television, label: 'Seriale' },
 ];
 
 export function MobileNav() {
@@ -60,9 +61,9 @@ export function MobileNav() {
             >
               <Icon
                 size={20}
+                weight={isActive ? "fill" : "light"}
                 style={{
                   color: isActive ? A.text : A.muted,
-                  strokeWidth: isActive ? 2 : 1.75,
                 }}
               />
               <span

@@ -1,7 +1,4 @@
 import { useState } from 'react';
-import { Star, Trash2, Edit2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/contexts/AuthContext';
 import { useReviews, useUserReview, useAverageRating, useAddReview, useDeleteReview } from '@/hooks/useReviews';
 import { formatDistanceToNow } from 'date-fns';
@@ -12,6 +9,15 @@ interface ReviewsSectionProps {
   type: 'movie' | 'tv';
   mediaTitle?: string;
 }
+
+const A = {
+  border: 'rgba(255,248,230,0.12)',
+  text: '#f3efe6',
+  text2: '#b8b1a3',
+  amber: '#d4a056',
+  red: '#ef4444',
+  bg: '#0a0a0c',
+};
 
 export const ReviewsSection = ({ tmdbId, type, mediaTitle }: ReviewsSectionProps) => {
   const { user } = useAuth();
@@ -71,7 +77,7 @@ export const ReviewsSection = ({ tmdbId, type, mediaTitle }: ReviewsSectionProps
 
   const StarRating = ({ value, onChange, readonly = false }: { value: number; onChange?: (v: number) => void; readonly?: boolean }) => {
     return (
-      <div className="flex gap-1">
+      <div style={{ display: 'flex', gap: 4 }}>
         {[1, 2, 3, 4, 5].map((star) => (
           <button
             key={star}
@@ -80,14 +86,20 @@ export const ReviewsSection = ({ tmdbId, type, mediaTitle }: ReviewsSectionProps
             onClick={() => !readonly && onChange?.(star)}
             onMouseEnter={() => !readonly && setHoverRating(star)}
             onMouseLeave={() => !readonly && setHoverRating(0)}
-            className={`transition-colors ${readonly ? 'cursor-default' : 'cursor-pointer hover:scale-110'}`}
+            style={{ 
+              background: 'transparent', 
+              border: 'none', 
+              cursor: readonly ? 'default' : 'pointer',
+              color: star <= (readonly ? value : (hoverRating || value)) ? A.amber : A.text2,
+              opacity: star <= (readonly ? value : (hoverRating || value)) ? 1 : 0.3,
+              fontSize: 20,
+              padding: 0,
+              margin: 0,
+              transition: 'all 0.2s ease',
+              transform: !readonly && hoverRating === star ? 'scale(1.2)' : 'scale(1)'
+            }}
           >
-            <Star
-              className={`w-6 h-6 ${star <= (readonly ? value : (hoverRating || value))
-                ? 'fill-yellow-400 text-yellow-400'
-                : 'text-gray-400'
-                }`}
-            />
+            ★
           </button>
         ))}
       </div>
@@ -95,92 +107,123 @@ export const ReviewsSection = ({ tmdbId, type, mediaTitle }: ReviewsSectionProps
   };
 
   return (
-    <div className="bg-background-secondary rounded-xl p-6 lg:p-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Recenzje</h2>
-          {averageData && averageData.count > 0 && (
-            <div className="flex items-center gap-2 mt-2">
-              <div className="flex">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <Star
-                    key={star}
-                    className={`w-5 h-5 ${star <= Math.round(averageData.average)
-                      ? 'fill-yellow-400 text-yellow-400'
-                      : 'text-gray-400'
-                      }`}
-                  />
-                ))}
-              </div>
-              <span className="text-lg font-semibold">{averageData.average.toFixed(1)}</span>
-              <span className="text-sm text-foreground-secondary">
-                ({averageData.count} {averageData.count === 1 ? 'recenzja' : 'recenzji'})
-              </span>
+    <div style={{ borderTop: `1px solid ${A.border}`, paddingTop: 40, marginTop: 40 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32 }}>
+        <h2 style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: A.text2, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Recenzje
+        </h2>
+        {averageData && averageData.count > 0 && (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div style={{ display: 'flex', gap: 2 }}>
+              {[1, 2, 3, 4, 5].map((star) => (
+                <span key={star} style={{ color: star <= Math.round(averageData.average) ? A.amber : A.text2, opacity: star <= Math.round(averageData.average) ? 1 : 0.3, fontSize: 14 }}>
+                  ★
+                </span>
+              ))}
             </div>
-          )}
-        </div>
+            <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 14, color: A.text }}>{averageData.average.toFixed(1)}</span>
+            <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2 }}>
+              ({averageData.count})
+            </span>
+          </div>
+        )}
       </div>
 
       {/* User's Review Form */}
       {user && (
-        <div className="border border-border rounded-lg p-4 space-y-4">
+        <div style={{ border: `1px solid ${A.border}`, padding: '24px', marginBottom: 32 }}>
           {userReview && !isEditing ? (
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
                 <div>
-                  <p className="font-semibold">Twoja recenzja</p>
+                  <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8 }}>Twoja recenzja</p>
                   <StarRating value={userReview.rating} readonly />
                 </div>
-                <div className="flex gap-2">
-                  <Button size="icon" variant="ghost" onClick={handleEdit}>
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <Button size="icon" variant="ghost" onClick={handleDelete}>
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </Button>
+                <div style={{ display: 'flex', gap: 16 }}>
+                  <button onClick={handleEdit} style={{ background: 'transparent', border: 'none', color: A.text2, fontFamily: '"JetBrains Mono", monospace', fontSize: 11, cursor: 'pointer', padding: 0 }} className="hover:text-white">
+                    [EDYCJA]
+                  </button>
+                  <button onClick={handleDelete} style={{ background: 'transparent', border: 'none', color: A.red, fontFamily: '"JetBrains Mono", monospace', fontSize: 11, cursor: 'pointer', padding: 0 }}>
+                    [USUŃ]
+                  </button>
                 </div>
               </div>
               {userReview.review && (
-                <p className="text-foreground-secondary">{userReview.review}</p>
+                <p style={{ fontFamily: '"Inter Tight", sans-serif', fontSize: 16, lineHeight: 1.6, color: A.text, margin: 0 }}>{userReview.review}</p>
               )}
             </div>
           ) : (
-            <div className="space-y-4">
-              <div>
-                <p className="text-sm font-medium mb-2">Twoja ocena</p>
+            <div>
+              <div style={{ marginBottom: 24 }}>
+                <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Twoja ocena</p>
                 <StarRating value={rating} onChange={setRating} />
               </div>
-              <div>
-                <p className="text-sm font-medium mb-2">Recenzja (opcjonalnie)</p>
-                <Textarea
+              <div style={{ marginBottom: 24 }}>
+                <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2, textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>Treść recenzji (opcjonalnie)</p>
+                <textarea
                   value={reviewText}
                   onChange={(e) => setReviewText(e.target.value)}
                   placeholder="Podziel się swoją opinią..."
                   rows={4}
                   maxLength={500}
+                  style={{
+                    width: '100%',
+                    background: 'transparent',
+                    border: `1px solid ${A.border}`,
+                    color: A.text,
+                    padding: 16,
+                    fontFamily: '"Inter Tight", sans-serif',
+                    fontSize: 14,
+                    outline: 'none',
+                    resize: 'vertical'
+                  }}
+                  className="focus:border-white transition-colors"
                 />
-                <p className="text-xs text-foreground-secondary mt-1">
-                  {reviewText.length}/500 znaków
+                <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: A.text2, marginTop: 8, textAlign: 'right' }}>
+                  {reviewText.length}/500
                 </p>
               </div>
-              <div className="flex gap-2">
-                <Button
+              <div style={{ display: 'flex', gap: 16 }}>
+                <button
                   onClick={handleSubmit}
                   disabled={rating === 0 || addReview.isPending}
+                  style={{
+                    background: rating === 0 ? 'transparent' : A.amber,
+                    border: `1px solid ${A.amber}`,
+                    color: rating === 0 ? A.amber : A.bg,
+                    padding: '12px 24px',
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: 11,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    cursor: rating === 0 ? 'not-allowed' : 'pointer',
+                  }}
+                  className="transition-colors hover:opacity-90"
                 >
-                  {userReview ? 'Zaktualizuj' : 'Dodaj recenzję'}
-                </Button>
+                  {userReview ? 'ZAKTUALIZUJ' : 'DODAJ RECENZJĘ'}
+                </button>
                 {isEditing && (
-                  <Button
-                    variant="outline"
+                  <button
                     onClick={() => {
                       setIsEditing(false);
                       setRating(0);
                       setReviewText('');
                     }}
+                    style={{
+                      background: 'transparent',
+                      border: `1px solid ${A.border}`,
+                      color: A.text,
+                      padding: '12px 24px',
+                      fontFamily: '"JetBrains Mono", monospace',
+                      fontSize: 11,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.1em',
+                      cursor: 'pointer',
+                    }}
+                    className="hover:bg-white/5 transition-colors"
                   >
-                    Anuluj
-                  </Button>
+                    ANULUJ
+                  </button>
                 )}
               </div>
             </div>
@@ -189,38 +232,39 @@ export const ReviewsSection = ({ tmdbId, type, mediaTitle }: ReviewsSectionProps
       )}
 
       {/* All Reviews */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold">Wszystkie recenzje</h3>
+      <div>
         {reviewsLoading ? (
-          <p className="text-center text-foreground-secondary py-8">Ładowanie recenzji...</p>
+          <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: A.text2 }} className="animate-pulse py-8 text-center">
+            ŁADOWANIE RECENZJI...
+          </div>
         ) : (() => {
           const otherReviews = reviews?.filter((review) => review.userId !== user?.uid) || [];
 
           return otherReviews.length > 0 ? (
-            otherReviews.map((review) => (
-              <div
-                key={review.id}
-                className="border border-border rounded-lg p-4 space-y-2"
-              >
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="font-semibold">{review.userName}</p>
-                    <div className="flex items-center gap-2 mt-1">
+            <div style={{ borderTop: `1px solid ${A.border}` }}>
+              {otherReviews.map((review) => (
+                <div
+                  key={review.id}
+                  style={{ borderBottom: `1px solid ${A.border}`, padding: '32px 0' }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+                    <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 13, color: A.text, fontWeight: 500 }}>{review.userName}</p>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                       <StarRating value={review.rating} readonly />
-                      <span className="text-xs text-foreground-secondary">
+                      <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: A.text2, textTransform: 'uppercase' }}>
                         {formatDistanceToNow(review.createdAt, { addSuffix: true, locale: pl })}
                       </span>
                     </div>
                   </div>
+                  {review.review && (
+                    <p style={{ fontFamily: '"Inter Tight", sans-serif', fontSize: 16, lineHeight: 1.6, color: A.text2, margin: 0 }}>{review.review}</p>
+                  )}
                 </div>
-                {review.review && (
-                  <p className="text-foreground-secondary">{review.review}</p>
-                )}
-              </div>
-            ))
+              ))}
+            </div>
           ) : (
-            <p className="text-center text-foreground-secondary py-8">
-              {user ? 'Brak innych recenzji. Bądź pierwszy!' : 'Brak recenzji'}
+            <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2, textAlign: 'center', padding: '40px 0', textTransform: 'uppercase', borderTop: `1px solid ${A.border}`, borderBottom: `1px solid ${A.border}` }}>
+              {user ? 'BRAK INNYCH RECENZJI. BĄDŹ PIERWSZY.' : 'BRAK RECENZJI.'}
             </p>
           );
         })()}

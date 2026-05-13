@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Plus, Trash2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -30,7 +29,7 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSeasonEpisodes, useAddEpisodeLink, useDeleteEpisodeLink } from '@/hooks/useEpisodes';
-import { stopLenis, startLenis, getLenis } from '@/lib/smoothScroll';
+import { stopLenis, startLenis } from '@/lib/smoothScroll';
 import { useSeasonDetails } from '@/hooks/useTMDB';
 import { db } from '@/lib/firebase';
 import { doc, setDoc } from 'firebase/firestore';
@@ -38,6 +37,14 @@ import { toast } from 'sonner';
 import { useWakeLock } from '@/hooks/useWakeLock';
 import { useWatchedEpisodes, useMarkEpisodeWatched } from '@/hooks/useWatchedEpisodes';
 import { useScrollToEpisode } from '@/hooks/useScrollToEpisode';
+
+const A = {
+  border: 'rgba(255,248,230,0.12)',
+  text: '#f3efe6',
+  text2: '#b8b1a3',
+  amber: '#d4a056',
+  red: '#ef4444',
+};
 
 interface EpisodeManagerProps {
   tmdbId: number;
@@ -50,7 +57,6 @@ interface EpisodeManagerProps {
 
 export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName, seriesName, targetEpisode }: EpisodeManagerProps) => {
   const { isAdmin, user } = useAuth();
-  // const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [selectedEpisode, setSelectedEpisode] = useState<number>(1);
   const [link, setLink] = useState('');
@@ -95,7 +101,6 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
     };
   }, [open, playerOpen]);
 
-  // Scroll to target episode with retry logic
   useScrollToEpisode({
     targetEpisode,
     tmdbId,
@@ -165,9 +170,9 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
         episodeNumber: episodeNum,
       }),
       {
-        loading: 'Usuwanie wszystkich linków...',
-        success: 'Wszystkie linki usunięte',
-        error: 'Błąd podczas usuwania',
+        loading: 'Usuwanie...',
+        success: 'Usunięte',
+        error: 'Błąd',
       }
     );
   };
@@ -221,9 +226,9 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
         });
       })(),
       {
-        loading: 'Usuwanie linku...',
-        success: 'Link usunięty',
-        error: 'Błąd podczas usuwania linku',
+        loading: 'Usuwanie...',
+        success: 'Usunięto',
+        error: 'Błąd',
       }
     );
   };
@@ -232,44 +237,56 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
   const episodesMap = new Map(episodes?.map(ep => [ep.episodeNumber, ep]) || []);
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h3 className="text-lg font-semibold">{seasonName}</h3>
+        <h3 style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 14, color: A.text, fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{seasonName}</h3>
         {isAdmin && (
           <Dialog open={open} onOpenChange={setOpen} modal={true}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Dodaj link
-              </Button>
+              <button 
+                style={{ 
+                  background: 'transparent', 
+                  border: `1px solid ${A.border}`, 
+                  color: A.amber, 
+                  padding: '6px 12px', 
+                  fontFamily: '"JetBrains Mono", monospace', 
+                  fontSize: 11, 
+                  textTransform: 'uppercase', 
+                  cursor: 'pointer' 
+                }} 
+                className="hover:bg-white/5 transition-colors"
+              >
+                + DODAJ LINK
+              </button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] overflow-y-auto" style={{ background: A.bg, border: `1px solid ${A.border}`, borderRadius: 0, color: A.text }}>
               <DialogHeader>
-                <DialogTitle>Dodaj link do odcinka</DialogTitle>
-                <DialogDescription>
-                  {seasonName} - Dodaj lub zaktualizuj link do odcinka
+                <DialogTitle style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 16, textTransform: 'uppercase' }}>Dodaj link do odcinka</DialogTitle>
+                <DialogDescription style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2 }}>
+                  {seasonName} - Dodaj lub zaktualizuj źródło
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4 overflow-visible">
+              <div className="space-y-4 overflow-visible mt-4">
                 <div>
-                  <Label htmlFor="episode">Odcinek</Label>
+                  <Label htmlFor="episode" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>ODCINEK</Label>
                   <Select
                     value={selectedEpisode.toString()}
                     onValueChange={(value) => setSelectedEpisode(parseInt(value))}
                   >
-                    <SelectTrigger id="episode">
+                    <SelectTrigger id="episode" style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: 'transparent' }}>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent
                       className="max-h-[300px]"
                       position="popper"
                       sideOffset={5}
+                      style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: A.bg }}
                     >
                       {episodeOptions.map((ep) => (
-                        <SelectItem key={ep} value={ep.toString()}>
+                        <SelectItem key={ep} value={ep.toString()} style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>
                           Odcinek {ep}
-                          {episodesMap.has(ep) && ' ✓'}
+                          {episodesMap.has(ep) && ' [ZAPISANY]'}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -277,54 +294,67 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
                 </div>
 
                 <div>
-                  <Label htmlFor="link">Link do odcinka</Label>
+                  <Label htmlFor="link" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>ADRES URL</Label>
                   <Input
                     id="link"
                     value={link}
                     onChange={(e) => setLink(e.target.value)}
                     placeholder="https://..."
                     type="url"
+                    style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: 'transparent', fontFamily: '"JetBrains Mono", monospace' }}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="quality">Jakość</Label>
+                    <Label htmlFor="quality" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>JAKOŚĆ</Label>
                     <Select value={quality} onValueChange={setQuality}>
-                      <SelectTrigger id="quality">
+                      <SelectTrigger id="quality" style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: 'transparent', fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2160p">4K (2160p)</SelectItem>
-                        <SelectItem value="1080p">Full HD (1080p)</SelectItem>
-                        <SelectItem value="720p">HD (720p)</SelectItem>
-                        <SelectItem value="480p">SD (480p)</SelectItem>
+                      <SelectContent style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: A.bg }}>
+                        <SelectItem value="2160p" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>4K (2160p)</SelectItem>
+                        <SelectItem value="1080p" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>FHD (1080p)</SelectItem>
+                        <SelectItem value="720p" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>HD (720p)</SelectItem>
+                        <SelectItem value="480p" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>SD (480p)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <Label htmlFor="language">Język</Label>
+                    <Label htmlFor="language" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>JĘZYK</Label>
                     <Select value={language} onValueChange={setLanguage}>
-                      <SelectTrigger id="language">
+                      <SelectTrigger id="language" style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: 'transparent', fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="PL">Polski</SelectItem>
-                        <SelectItem value="ENG">Angielski</SelectItem>
-                        <SelectItem value="PL/ENG">PL/ENG</SelectItem>
+                      <SelectContent style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: A.bg }}>
+                        <SelectItem value="PL" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>Polski</SelectItem>
+                        <SelectItem value="ENG" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>Angielski</SelectItem>
+                        <SelectItem value="PL/ENG" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>PL/ENG</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
-                <Button
+                <button
                   onClick={handleAddLink}
                   disabled={!link.trim() || addEpisodeLink.isPending}
-                  className="w-full"
+                  style={{
+                    width: '100%',
+                    padding: '12px 0',
+                    background: link.trim() ? A.amber : 'transparent',
+                    border: `1px solid ${A.amber}`,
+                    color: link.trim() ? A.bg : A.amber,
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: 12,
+                    textTransform: 'uppercase',
+                    cursor: link.trim() ? 'pointer' : 'not-allowed',
+                    marginTop: 16
+                  }}
+                  className="transition-colors hover:opacity-90"
                 >
-                  {episodesMap.has(selectedEpisode) ? 'Zaktualizuj link' : 'Dodaj link'}
-                </Button>
+                  {episodesMap.has(selectedEpisode) ? 'ZAKTUALIZUJ LINK' : 'ZAPISZ LINK'}
+                </button>
               </div>
             </DialogContent>
           </Dialog>
@@ -332,104 +362,122 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
       </div>
 
       {isEpisodesLoading || isSeasonDetailsLoading ? (
-        <div className="text-center py-4 text-foreground-secondary">Ładowanie...</div>
+        <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: A.text2 }} className="animate-pulse">
+          ŁADOWANIE ODCINKÓW...
+        </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-          {seasonDetails?.episodes?.map((tmdbEpisode) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-0 border" style={{ borderColor: A.border }}>
+          {seasonDetails?.episodes?.map((tmdbEpisode, index) => {
             const dbEpisode = episodesMap.get(tmdbEpisode.episode_number);
+            const isWatched = watchedEpisodesSet.has(`${seasonNumber}_${tmdbEpisode.episode_number}`);
 
             return (
               <div
                 key={tmdbEpisode.id}
                 id={`episode-${tmdbId}-s${seasonNumber}-e${tmdbEpisode.episode_number}`}
-                className={`bg-background rounded-xl p-4 border transition-all group ${watchedEpisodesSet.has(`${seasonNumber}_${tmdbEpisode.episode_number}`)
-                  ? 'border-green-500/50 shadow-sm shadow-green-500/10'
-                  : dbEpisode ? 'border-border shadow-sm' : 'border-border/50 opacity-70'
-                  }`}
+                style={{
+                  borderRight: (index + 1) % 3 !== 0 ? `1px solid ${A.border}` : 'none',
+                  borderBottom: `1px solid ${A.border}`,
+                  padding: '24px',
+                  background: isWatched ? 'rgba(212,160,86,0.02)' : 'transparent',
+                  opacity: dbEpisode ? 1 : 0.6,
+                }}
+                className="group flex flex-col"
               >
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-4">
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="text-xs font-bold text-primary">
-                        Odcinek {tmdbEpisode.episode_number}
-                      </span>
+                    <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: isWatched ? A.amber : A.text2, letterSpacing: '0.1em', marginBottom: 8, textTransform: 'uppercase' }}>
+                      Odcinek {tmdbEpisode.episode_number}
                     </div>
-                    <h4 className="font-bold text-sm line-clamp-2 leading-snug">
+                    <h4 style={{ fontSize: 16, fontWeight: 500, color: A.text, margin: 0, lineHeight: 1.3 }} className="line-clamp-2">
                       {tmdbEpisode.name || `Odcinek ${tmdbEpisode.episode_number}`}
                     </h4>
                   </div>
-                  {isAdmin && dbEpisode && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => handleDelete(tmdbEpisode.episode_number)}
-                      className="h-8 w-8 text-destructive hover:bg-destructive/10 -mt-1 -mr-1"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  )}
-                  {isAdmin && !dbEpisode && (
-                    <Button
-                      size="icon"
-                      variant="ghost"
-                      onClick={() => {
-                        setSelectedEpisode(tmdbEpisode.episode_number);
-                        setOpen(true);
-                      }}
-                      className="h-8 w-8 text-muted-foreground hover:text-primary -mt-1 -mr-1"
-                      title="Dodaj link"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    {isAdmin && !dbEpisode && (
+                      <button
+                        onClick={() => {
+                          setSelectedEpisode(tmdbEpisode.episode_number);
+                          setOpen(true);
+                        }}
+                        style={{ background: 'transparent', border: 'none', color: A.amber, fontFamily: '"JetBrains Mono", monospace', fontSize: 16, cursor: 'pointer', padding: 0 }}
+                        title="Dodaj link"
+                      >
+                        [+]
+                      </button>
+                    )}
+                    {isAdmin && dbEpisode && (
+                      <button
+                        onClick={() => handleDelete(tmdbEpisode.episode_number)}
+                        style={{ background: 'transparent', border: 'none', color: A.red, fontFamily: '"JetBrains Mono", monospace', fontSize: 12, cursor: 'pointer', padding: 0 }}
+                        title="Usuń wszystkie linki"
+                      >
+                        [X]
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {dbEpisode ? (
-                  <div className="space-y-0 mt-auto border-t border-border/50">
+                  <div className="mt-auto space-y-2 pt-4">
                     {dbEpisode.links && dbEpisode.links.length > 0 ? (
                       dbEpisode.links.map((linkItem, idx) => (
-                        <div
-                          key={idx}
-                          className="flex items-center gap-2 hover:bg-primary/5 py-3 border-b border-border/50 last:border-0 transition-colors group/link"
-                        >
+                        <div key={idx} className="flex items-center justify-between group/link border-b last:border-0 pb-2 last:pb-0" style={{ borderColor: A.border }}>
                           <button
                             onClick={(e) => handlePlayClick(linkItem.url, tmdbEpisode.episode_number, e)}
-                            className="flex items-center gap-2 text-sm text-primary hover:underline flex-1 min-w-0 text-left"
+                            style={{ background: 'transparent', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer', textAlign: 'left', flex: 1 }}
+                            className="hover:opacity-70 transition-opacity"
                           >
-                            <Play className="w-4 h-4 flex-shrink-0" />
-                            <span className="flex-1 min-w-0 truncate font-medium">
+                            <span style={{ color: A.amber, fontSize: 14 }}>▶</span>
+                            <span style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text, textTransform: 'uppercase' }}>
                               {linkItem.provider}
-                              {linkItem.version && <span className="text-foreground-secondary ml-1.5 opacity-80 decoration-0 font-normal"> • {linkItem.version}</span>}
+                              {linkItem.version && <span style={{ color: A.text2 }}> • {linkItem.version}</span>}
                             </span>
                           </button>
                           {isAdmin && (
-                            <Button
-                              size="icon"
-                              variant="ghost"
+                            <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 handleDeleteLink(tmdbEpisode.episode_number, idx);
                               }}
-                              className="h-6 w-6 text-destructive/70 hover:text-destructive hover:bg-destructive/10"
+                              style={{ background: 'transparent', border: 'none', color: A.red, fontFamily: '"JetBrains Mono", monospace', fontSize: 10, cursor: 'pointer', padding: '0 4px' }}
+                              className="opacity-0 group-hover/link:opacity-100 transition-opacity"
                             >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </Button>
+                              [X]
+                            </button>
                           )}
                         </div>
                       ))
                     ) : dbEpisode.link ? (
                       <button
                         onClick={(e) => handlePlayClick(dbEpisode.link!, tmdbEpisode.episode_number, e)}
-                        className="w-full flex items-center justify-center gap-2 p-2.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors text-sm font-semibold"
+                        style={{
+                          width: '100%',
+                          background: 'transparent',
+                          border: `1px solid ${A.amber}`,
+                          color: A.amber,
+                          padding: '8px 0',
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: 11,
+                          textTransform: 'uppercase',
+                          letterSpacing: '0.1em',
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          gap: 8,
+                        }}
+                        className="hover:bg-white/5 transition-colors"
                       >
-                        <Play className="w-4 h-4 fill-current" />
-                        Odtwórz
+                        ▶ ODTWÓRZ
                       </button>
                     ) : null}
                   </div>
                 ) : (
-                  <div className="mt-auto">
-                    <p className="text-[11px] text-muted-foreground italic">Brak dostępnych linków</p>
+                  <div className="mt-auto pt-4">
+                    <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: A.text2, margin: 0, textTransform: 'uppercase' }}>
+                      Brak źródeł
+                    </p>
                   </div>
                 )}
               </div>
@@ -440,8 +488,8 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
 
       {/* Player Modal */}
       <Dialog open={playerOpen} onOpenChange={setPlayerOpen}>
-        <DialogContent className="max-w-7xl w-full h-[90vh] p-0" aria-describedby={undefined}>
-          <DialogTitle className="sr-only">Odtwarzacz wideo</DialogTitle>
+        <DialogContent className="max-w-7xl w-full h-[90vh] p-0" style={{ border: `1px solid ${A.border}`, borderRadius: 0, background: '#000' }} aria-describedby={undefined}>
+          <DialogTitle className="sr-only">Odtwarzacz</DialogTitle>
           <div className="relative w-full h-full bg-black">
             <iframe
               src={currentPlayerUrl}
@@ -456,32 +504,32 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
 
       {/* Delete Single Link Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent style={{ background: A.bg, border: `1px solid ${A.border}`, borderRadius: 0 }}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Usunąć link?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Czy na pewno chcesz usunąć ten link? Ta operacja jest nieodwracalna.
+            <AlertDialogTitle style={{ fontFamily: '"JetBrains Mono", monospace', color: A.text, fontSize: 14 }}>USUNĄĆ LINK?</AlertDialogTitle>
+            <AlertDialogDescription style={{ fontFamily: '"JetBrains Mono", monospace', color: A.text2, fontSize: 11 }}>
+              Ta operacja jest nieodwracalna.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteLink}>Usuń</AlertDialogAction>
+            <AlertDialogCancel style={{ borderRadius: 0, border: `1px solid ${A.border}`, fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>ANULUJ</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteLink} style={{ borderRadius: 0, background: A.red, color: '#fff', fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>USUŃ</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Delete All Links Dialog */}
       <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent style={{ background: A.bg, border: `1px solid ${A.border}`, borderRadius: 0 }}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Usunąć wszystkie linki?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Czy na pewno chcesz usunąć wszystkie linki tego odcinka? Ta operacja jest nieodwracalna.
+            <AlertDialogTitle style={{ fontFamily: '"JetBrains Mono", monospace', color: A.text, fontSize: 14 }}>USUNĄĆ WSZYSTKIE LINKI?</AlertDialogTitle>
+            <AlertDialogDescription style={{ fontFamily: '"JetBrains Mono", monospace', color: A.text2, fontSize: 11 }}>
+              Czy na pewno chcesz usunąć wszystkie źródła dla tego odcinka?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteAll}>Usuń wszystkie</AlertDialogAction>
+            <AlertDialogCancel style={{ borderRadius: 0, border: `1px solid ${A.border}`, fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>ANULUJ</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteAll} style={{ borderRadius: 0, background: A.red, color: '#fff', fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>USUŃ WSZYSTKIE</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

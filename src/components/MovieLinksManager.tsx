@@ -1,5 +1,4 @@
 import { useState, useEffect } from 'react';
-import { Plus, ExternalLink, Trash2, Play } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -36,6 +35,14 @@ import { doc, setDoc } from 'firebase/firestore';
 import { toast } from 'sonner';
 import { useWakeLock } from '@/hooks/useWakeLock';
 
+const A = {
+  border: 'rgba(255,248,230,0.12)',
+  text: '#f3efe6',
+  text2: '#b8b1a3',
+  amber: '#d4a056',
+  red: '#ef4444',
+  bg: '#0a0a0c',
+};
 
 interface MovieLinksManagerProps {
   tmdbId: number;
@@ -61,8 +68,6 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
 
   useWakeLock(playerOpen);
 
-
-  // Block body scroll when dialog is open
   useEffect(() => {
     if (open || playerOpen) {
       stopLenis();
@@ -154,19 +159,14 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
 
     toast.promise(
       (async () => {
-        // Usuń link z array
         const updatedLinks = movieLink.links!.filter((_, idx) => idx !== linkIndex);
 
-        // Jeśli to był ostatni link, usuń cały dokument
         if (updatedLinks.length === 0) {
           await deleteMovieLink.mutateAsync({ tmdbId, linkId });
           return;
         }
 
-        // Zaktualizuj dokument z nową listą linków
         const movieRef = doc(db, 'episodes', linkId);
-
-        // Zaktualizuj główny link na pierwszy z pozostałych
         const mainLink = updatedLinks[0];
 
         await setDoc(movieRef, {
@@ -178,7 +178,6 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
           updatedAt: new Date(),
         }, { merge: true });
 
-        // Odśwież dane
         await deleteMovieLink.mutateAsync({ tmdbId, linkId });
       })(),
       {
@@ -194,75 +193,101 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
   }
 
   return (
-    <div className="bg-background-secondary rounded-xl p-6 lg:p-8">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold">Zarządzanie linkami</h2>
+    <div style={{ borderTop: `1px solid ${A.border}`, paddingTop: 40, marginTop: 40 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 32 }}>
+        <h2 style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: A.text2, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+          Zarządzanie linkami
+        </h2>
         {isAdmin && (
           <Dialog open={open} onOpenChange={setOpen} modal={true}>
             <DialogTrigger asChild>
-              <Button size="sm" variant="outline">
-                <Plus className="w-4 h-4 mr-2" />
-                Dodaj link
-              </Button>
+              <button 
+                style={{ 
+                  background: 'transparent', 
+                  border: `1px solid ${A.border}`, 
+                  color: A.amber, 
+                  padding: '6px 12px', 
+                  fontFamily: '"JetBrains Mono", monospace', 
+                  fontSize: 11, 
+                  textTransform: 'uppercase', 
+                  cursor: 'pointer' 
+                }} 
+                className="hover:bg-white/5 transition-colors"
+              >
+                + DODAJ LINK
+              </button>
             </DialogTrigger>
-            <DialogContent className="max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-h-[90vh] overflow-y-auto" style={{ background: A.bg, border: `1px solid ${A.border}`, borderRadius: 0, color: A.text }}>
               <DialogHeader>
-                <DialogTitle>Dodaj link</DialogTitle>
-                <DialogDescription>
-                  {movieTitle}
+                <DialogTitle style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 16, textTransform: 'uppercase' }}>Dodaj link</DialogTitle>
+                <DialogDescription style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2 }}>
+                  {movieTitle} - Dodaj źródło filmu
                 </DialogDescription>
               </DialogHeader>
 
-              <div className="space-y-4 overflow-visible">
+              <div className="space-y-4 overflow-visible mt-4">
                 <div>
-                  <Label htmlFor="link">Link do filmu</Label>
+                  <Label htmlFor="link" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>ADRES URL</Label>
                   <Input
                     id="link"
                     value={link}
                     onChange={(e) => setLink(e.target.value)}
                     placeholder="https://..."
                     type="url"
+                    style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: 'transparent', fontFamily: '"JetBrains Mono", monospace' }}
                   />
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Label htmlFor="quality">Jakość</Label>
+                    <Label htmlFor="quality" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>JAKOŚĆ</Label>
                     <Select value={quality} onValueChange={setQuality}>
-                      <SelectTrigger id="quality">
+                      <SelectTrigger id="quality" style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: 'transparent', fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="2160p">4K (2160p)</SelectItem>
-                        <SelectItem value="1080p">Full HD (1080p)</SelectItem>
-                        <SelectItem value="720p">HD (720p)</SelectItem>
-                        <SelectItem value="480p">SD (480p)</SelectItem>
+                      <SelectContent style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: A.bg }}>
+                        <SelectItem value="2160p" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>4K (2160p)</SelectItem>
+                        <SelectItem value="1080p" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>FHD (1080p)</SelectItem>
+                        <SelectItem value="720p" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>HD (720p)</SelectItem>
+                        <SelectItem value="480p" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>SD (480p)</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
 
                   <div>
-                    <Label htmlFor="language">Język</Label>
+                    <Label htmlFor="language" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>JĘZYK</Label>
                     <Select value={language} onValueChange={setLanguage}>
-                      <SelectTrigger id="language">
+                      <SelectTrigger id="language" style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: 'transparent', fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="PL">Polski</SelectItem>
-                        <SelectItem value="ENG">Angielski</SelectItem>
-                        <SelectItem value="PL/ENG">PL/ENG</SelectItem>
+                      <SelectContent style={{ borderRadius: 0, border: `1px solid ${A.border}`, background: A.bg }}>
+                        <SelectItem value="PL" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>Polski</SelectItem>
+                        <SelectItem value="ENG" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>Angielski</SelectItem>
+                        <SelectItem value="PL/ENG" style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, borderRadius: 0 }}>PL/ENG</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
 
-                <Button
+                <button
                   onClick={handleAddLink}
                   disabled={!link.trim() || addMovieLink.isPending}
-                  className="w-full"
+                  style={{
+                    width: '100%',
+                    padding: '12px 0',
+                    background: link.trim() ? A.amber : 'transparent',
+                    border: `1px solid ${A.amber}`,
+                    color: link.trim() ? A.bg : A.amber,
+                    fontFamily: '"JetBrains Mono", monospace',
+                    fontSize: 12,
+                    textTransform: 'uppercase',
+                    cursor: link.trim() ? 'pointer' : 'not-allowed',
+                    marginTop: 16
+                  }}
+                  className="transition-colors hover:opacity-90"
                 >
-                  Dodaj link
-                </Button>
+                  DODAJ LINK
+                </button>
               </div>
             </DialogContent>
           </Dialog>
@@ -270,77 +295,74 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
       </div>
 
       {isLoading ? (
-        <div className="text-center py-4 text-foreground-secondary">Ładowanie...</div>
+        <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 12, color: A.text2 }} className="animate-pulse py-8 text-center">
+          ŁADOWANIE ZASOBÓW...
+        </div>
       ) : links && links.length > 0 ? (
-        <div className="space-y-4">
+        <div style={{ borderTop: `1px solid ${A.border}` }}>
           {links.map((link) => (
             <div
               key={link.id}
-              className="bg-background rounded-xl p-6 border-2 border-border hover:border-primary/50 transition-colors"
+              style={{ borderBottom: `1px solid ${A.border}`, padding: '32px 0' }}
             >
-              {/* Nagłówek z liczbą linków */}
-              <div className="flex items-center justify-between mb-4 pb-4 border-b border-border">
+              {/* Header */}
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 24 }}>
                 <div>
-                  <h3 className="text-lg font-bold">Dostępne odtwarzacze</h3>
-                  <p className="text-sm text-muted-foreground">
+                  <h3 style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 14, color: A.text, fontWeight: 500, letterSpacing: '0.1em', textTransform: 'uppercase' }}>DOSTĘPNE ODTWARZACZE</h3>
+                  <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2, marginTop: 8 }}>
                     {link.links && link.links.length > 0
-                      ? `${link.links.length} ${link.links.length === 1 ? 'link' : 'linki'} streamingowe`
-                      : 'Brak linków'}
+                      ? `${link.links.length} ŹRÓDEŁ`
+                      : 'BRAK ŹRÓDEŁ'}
                   </p>
                 </div>
                 {isAdmin && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
+                  <button
                     onClick={() => handleDelete(link.id)}
-                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                    style={{ background: 'transparent', border: 'none', color: A.red, fontFamily: '"JetBrains Mono", monospace', fontSize: 11, cursor: 'pointer', padding: 0 }}
                   >
-                    <Trash2 className="w-4 h-4 mr-2" />
-                    Usuń wszystkie
-                  </Button>
+                    [USUŃ WSZYSTKIE]
+                  </button>
                 )}
               </div>
 
-              {/* Wyświetl wszystkie linki jeśli są dostępne */}
+              {/* Links list */}
               {link.links && link.links.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                   {link.links.map((streamLink, idx) => (
                     <div
                       key={idx}
-                      className="flex items-center gap-3 p-4 bg-background-secondary hover:bg-primary/5 rounded-lg border border-border hover:border-primary/50 transition-all group/link"
+                      style={{ border: `1px solid ${A.border}`, padding: '16px', display: 'flex', alignItems: 'center', gap: 16 }}
+                      className="group/link hover:bg-white/5 transition-colors"
                     >
                       <button
                         onClick={(e) => handlePlayClick(streamLink.url, e)}
-                        className="flex items-center gap-3 flex-1 min-w-0 text-left"
+                        style={{ background: 'transparent', border: 'none', padding: 0, display: 'flex', alignItems: 'center', gap: 16, cursor: 'pointer', textAlign: 'left', flex: 1 }}
                       >
-                        <div className="flex-shrink-0 w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center group-hover/link:bg-primary/30 transition-colors">
-                          <Play className="w-5 h-5 text-primary" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="font-semibold text-sm truncate">{streamLink.provider}</div>
-                          <div className="text-xs text-muted-foreground flex items-center gap-2">
+                        <div style={{ color: A.amber, fontSize: 18 }}>▶</div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 13, color: A.text, textTransform: 'uppercase' }}>{streamLink.provider}</div>
+                          <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: A.text2, textTransform: 'uppercase' }}>
                             {streamLink.version && <span>{streamLink.version}</span>}
                             {streamLink.quality && (
                               <>
-                                {streamLink.version && <span>•</span>}
-                                <span className="text-primary font-medium">{streamLink.quality}</span>
+                                {streamLink.version && <span> • </span>}
+                                <span style={{ color: A.amber }}>{streamLink.quality}</span>
                               </>
                             )}
                           </div>
                         </div>
                       </button>
                       {isAdmin && (
-                        <Button
-                          size="icon"
-                          variant="ghost"
+                        <button
                           onClick={(e) => {
                             e.stopPropagation();
                             handleDeleteSingleLink(link.id, idx);
                           }}
-                          className="h-8 w-8 flex-shrink-0 transition-opacity text-destructive hover:bg-destructive/10"
+                          style={{ background: 'transparent', border: 'none', color: A.red, fontFamily: '"JetBrains Mono", monospace', fontSize: 12, cursor: 'pointer', padding: '0 8px' }}
+                          className="opacity-0 group-hover/link:opacity-100 transition-opacity"
                         >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
+                          [X]
+                        </button>
                       )}
                     </div>
                   ))}
@@ -350,37 +372,42 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
                   href={link.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-3 p-4 bg-background-secondary hover:bg-primary/5 rounded-lg border border-border hover:border-primary/50 transition-all"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 16,
+                    padding: '16px',
+                    border: `1px solid ${A.border}`,
+                    textDecoration: 'none',
+                  }}
+                  className="hover:bg-white/5 transition-colors"
                 >
-                  <div className="flex-shrink-0 w-10 h-10 bg-primary/20 rounded-lg flex items-center justify-center">
-                    <Play className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="font-semibold">Odtwórz film</div>
-                    <div className="text-xs text-muted-foreground">
+                  <div style={{ color: A.amber, fontSize: 18 }}>▶</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 13, color: A.text, textTransform: 'uppercase' }}>ODTWÓRZ FILM</div>
+                    <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: A.text2, textTransform: 'uppercase' }}>
                       {link.quality} • {link.language}
                     </div>
                   </div>
-
                 </a>
               ) : (
-                <p className="text-center py-8 text-muted-foreground">Brak dostępnych linków</p>
+                <p style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2, textAlign: 'center', padding: '24px 0', textTransform: 'uppercase' }}>Brak dostępnych źródeł</p>
               )}
             </div>
           ))}
         </div>
       ) : (
-        <div className="text-center py-8 text-foreground-secondary">
-          <p>Brak linków</p>
+        <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 11, color: A.text2, textAlign: 'center', padding: '40px 0', textTransform: 'uppercase', borderTop: `1px solid ${A.border}`, borderBottom: `1px solid ${A.border}` }}>
+          <p>Brak zasobów.</p>
           {isAdmin && (
-            <p className="text-sm mt-2">Dodaj pierwszy link</p>
+            <p style={{ marginTop: 8 }}>Możesz dodać pierwszy link.</p>
           )}
         </div>
       )}
 
       {/* Player Modal */}
       <Dialog open={playerOpen} onOpenChange={setPlayerOpen}>
-        <DialogContent className="max-w-7xl w-full h-[90vh] p-0">
+        <DialogContent className="max-w-7xl w-full h-[90vh] p-0" style={{ border: `1px solid ${A.border}`, borderRadius: 0, background: '#000' }}>
           <div className="relative w-full h-full bg-black">
             <iframe
               src={currentPlayerUrl}
@@ -395,32 +422,32 @@ export const MovieLinksManager = ({ tmdbId, movieTitle }: MovieLinksManagerProps
 
       {/* Delete Single Link Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent style={{ background: A.bg, border: `1px solid ${A.border}`, borderRadius: 0 }}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Usunąć link?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle style={{ fontFamily: '"JetBrains Mono", monospace', color: A.text, fontSize: 14 }}>USUNĄĆ LINK?</AlertDialogTitle>
+            <AlertDialogDescription style={{ fontFamily: '"JetBrains Mono", monospace', color: A.text2, fontSize: 11 }}>
               Czy na pewno chcesz usunąć ten link? Ta operacja jest nieodwracalna.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteLink}>Usuń</AlertDialogAction>
+            <AlertDialogCancel style={{ borderRadius: 0, border: `1px solid ${A.border}`, fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>ANULUJ</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteLink} style={{ borderRadius: 0, background: A.red, color: '#fff', fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>USUŃ</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* Delete All Links Dialog */}
       <AlertDialog open={deleteAllDialogOpen} onOpenChange={setDeleteAllDialogOpen}>
-        <AlertDialogContent>
+        <AlertDialogContent style={{ background: A.bg, border: `1px solid ${A.border}`, borderRadius: 0 }}>
           <AlertDialogHeader>
-            <AlertDialogTitle>Usunąć wszystkie linki?</AlertDialogTitle>
-            <AlertDialogDescription>
+            <AlertDialogTitle style={{ fontFamily: '"JetBrains Mono", monospace', color: A.text, fontSize: 14 }}>USUNĄĆ WSZYSTKIE LINKI?</AlertDialogTitle>
+            <AlertDialogDescription style={{ fontFamily: '"JetBrains Mono", monospace', color: A.text2, fontSize: 11 }}>
               Czy na pewno chcesz usunąć wszystkie linki tego filmu? Ta operacja jest nieodwracalna.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Anuluj</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDeleteAll}>Usuń wszystkie</AlertDialogAction>
+            <AlertDialogCancel style={{ borderRadius: 0, border: `1px solid ${A.border}`, fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>ANULUJ</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmDeleteAll} style={{ borderRadius: 0, background: A.red, color: '#fff', fontFamily: '"JetBrains Mono", monospace', fontSize: 11 }}>USUŃ WSZYSTKIE</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

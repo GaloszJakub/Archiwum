@@ -1,7 +1,5 @@
 import { motion } from 'framer-motion';
-import { useState, memo } from 'react';
-import { Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { memo } from 'react';
 import { AddToCollectionButton } from '@/components/AddToCollectionButton';
 
 interface MovieCardProps {
@@ -14,28 +12,10 @@ interface MovieCardProps {
   tmdbId?: number;
   type?: 'movie' | 'tv';
   posterPath?: string | null;
+  onClick?: () => void;
 }
 
-export const MovieCard = memo(({ id, title, posterUrl, year, rating, layoutId, tmdbId, type, posterPath, onClick }: MovieCardProps & { onClick?: () => void }) => {
-  const [rotateX, setRotateX] = useState(0);
-  const [rotateY, setRotateY] = useState(0);
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    const centerY = rect.top + rect.height / 2;
-    const percentX = (e.clientX - centerX) / (rect.width / 2);
-    const percentY = (e.clientY - centerY) / (rect.height / 2);
-
-    setRotateY(percentX * 10);
-    setRotateX(-percentY * 10);
-  };
-
-  const handleMouseLeave = () => {
-    setRotateX(0);
-    setRotateY(0);
-  };
-
+export const MovieCard = memo(({ id, title, posterUrl, year, rating, layoutId, tmdbId, type, posterPath, onClick }: MovieCardProps) => {
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (onClick && (e.key === 'Enter' || e.key === ' ')) {
       e.preventDefault();
@@ -46,40 +26,33 @@ export const MovieCard = memo(({ id, title, posterUrl, year, rating, layoutId, t
   return (
     <motion.div
       layoutId={layoutId}
-      className="group relative aspect-[2/3] overflow-hidden rounded-lg bg-background-secondary cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary"
+      className="group relative aspect-[2/3] overflow-hidden rounded-xl bg-[#14141a] cursor-pointer focus:outline-none border border-white/5 transition-colors duration-500 hover:border-[#d4a056]/40"
       style={{
-        transformStyle: 'preserve-3d',
-        perspective: '1000px',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
       }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
       onClick={onClick}
       onKeyDown={handleKeyDown}
       role="button"
       tabIndex={0}
-      whileHover={{ scale: 1.05 }}
-      whileFocus={{ scale: 1.05 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+      whileHover={{ 
+        scale: 1.04,
+        boxShadow: '0 20px 40px rgba(0,0,0,0.6), 0 0 20px rgba(212, 160, 86, 0.15)',
+      }}
+      whileFocus={{ scale: 1.04, boxShadow: '0 0 0 2px rgba(212,160,86,0.5)' }}
+      transition={{ type: 'spring', stiffness: 350, damping: 25 }}
     >
-      <motion.div
-        style={{
-          rotateX,
-          rotateY,
-        }}
-        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-        className="w-full h-full"
-      >
+      <div className="w-full h-full relative">
         <img
           src={posterUrl}
           alt={title}
-          className="w-full h-full object-cover"
+          className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105"
           loading="lazy"
         />
 
         {/* Add to Collection Button */}
         {tmdbId && type && (
           <div
-            className="absolute top-2 right-2 z-10 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity"
+            className="absolute top-3 right-3 z-20 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all duration-300 transform lg:translate-y-[-10px] lg:group-hover:translate-y-0"
             onClick={(e) => e.stopPropagation()}
             role="button"
             tabIndex={0}
@@ -94,24 +67,39 @@ export const MovieCard = memo(({ id, title, posterUrl, year, rating, layoutId, t
           </div>
         )}
 
-        {/* Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/0 to-black/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-          <div className="absolute bottom-0 left-0 right-0 p-4">
-            <h3 className="font-semibold text-sm mb-1 line-clamp-2">{title}</h3>
-            <div className="flex items-center gap-2 text-xs text-foreground-secondary">
+        {/* Prestige Overlay */}
+        <div 
+          className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 ease-out flex flex-col justify-end z-10 pointer-events-none"
+          style={{
+            background: 'linear-gradient(to top, rgba(10,10,12,0.95) 0%, rgba(10,10,12,0.5) 45%, transparent 100%)',
+          }}
+        >
+          <div 
+            className="p-5 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-500 ease-out"
+          >
+            <h3 
+              style={{ fontFamily: '"Inter Tight", sans-serif', letterSpacing: '-0.01em' }}
+              className="font-semibold text-[#f3efe6] text-base mb-1.5 line-clamp-2 leading-tight drop-shadow-md"
+            >
+              {title}
+            </h3>
+            <div className="flex items-center gap-2 text-[13px] font-medium" style={{ color: '#b8b1a3' }}>
               {year && <span>{year}</span>}
               {rating && rating > 0 && (
                 <>
-                  <span>•</span>
-                  <span className="flex items-center gap-1">
-                    ⭐ {rating.toFixed(1)}
+                  <span className="opacity-40">•</span>
+                  <span className="flex items-center gap-1.5" style={{ color: '#d4a056' }}>
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+                    </svg>
+                    {rating.toFixed(1)}
                   </span>
                 </>
               )}
             </div>
           </div>
         </div>
-      </motion.div>
+      </div>
     </motion.div>
   );
 });

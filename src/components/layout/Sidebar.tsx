@@ -1,6 +1,7 @@
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Home, Search, Heart, Download, Film, Tv, FileText, Sparkles, Shield, LogOut } from 'lucide-react';
+import { House, MagnifyingGlass, Heart, FilmStrip, Television, ShieldCheck, SignOut } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
+import { motion } from 'framer-motion';
 
 const A = {
   bg: '#0a0a0c',
@@ -36,18 +37,14 @@ export const Sidebar = ({ onClose, showCloseButton }: SidebarProps) => {
   };
 
   const navItems = [
-    { path: '/', exact: true, Icon: Home, label: 'Główna' },
-    { path: '/search', exact: false, Icon: Search, label: 'Wyszukaj' },
+    { path: '/', exact: true, Icon: House, label: 'Główna' },
+    { path: '/search', exact: false, Icon: MagnifyingGlass, label: 'Wyszukiwarka' },
     { path: '/collections', exact: false, Icon: Heart, label: 'Moja lista' },
   ];
 
-  if (isAdmin) {
-    navItems.push({ path: '/admin/users', exact: false, Icon: Shield, label: 'Admin' });
-  }
-
   const libraryItems = [
-    { path: '/movies', label: 'Filmy', Icon: Film },
-    { path: '/series', label: 'Seriale', Icon: Tv },
+    { path: '/movies', label: 'Filmy', Icon: FilmStrip },
+    { path: '/series', label: 'Seriale', Icon: Television },
   ];
 
   const genreItems = [
@@ -119,13 +116,13 @@ export const Sidebar = ({ onClose, showCloseButton }: SidebarProps) => {
               key={path}
               to={path}
               onClick={onClose}
+              className="sidebar-item"
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 12,
                 padding: '10px 12px',
                 borderRadius: 8,
-                background: active ? A.surface2 : 'transparent',
                 color: active ? A.text : A.text2,
                 fontSize: 13.5,
                 fontWeight: 500,
@@ -135,21 +132,36 @@ export const Sidebar = ({ onClose, showCloseButton }: SidebarProps) => {
               }}
             >
               {active && (
-                <div
-                  style={{
-                    position: 'absolute',
-                    left: -12,
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    width: 3,
-                    height: 18,
-                    background: A.amber,
-                    borderRadius: 2,
-                  }}
-                />
+                <>
+                  <motion.div
+                    layoutId="sidebarActiveBackground"
+                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      background: A.surface2,
+                      borderRadius: 8,
+                      zIndex: 0,
+                    }}
+                  />
+                  <motion.div
+                    layoutId="sidebarActiveIndicator"
+                    transition={{ type: "spring", stiffness: 350, damping: 30 }}
+                    style={{
+                      position: 'absolute',
+                      left: -12,
+                      top: '50%',
+                      marginTop: -9, // half of height 18px
+                      width: 3,
+                      height: 18,
+                      background: A.amber,
+                      borderRadius: 2,
+                    }}
+                  />
+                </>
               )}
-              <Icon size={18} style={{ color: active ? A.text : A.text2, strokeWidth: 1.75 }} />
-              <span style={{ flex: 1 }}>{label}</span>
+              <Icon size={18} weight={active ? "fill" : "light"} style={{ color: active ? A.text : A.text2, position: 'relative', zIndex: 1 }} />
+              <span style={{ flex: 1, position: 'relative', zIndex: 1 }}>{label}</span>
             </Link>
           );
         })}
@@ -177,6 +189,7 @@ export const Sidebar = ({ onClose, showCloseButton }: SidebarProps) => {
               key={path}
               to={path}
               onClick={onClose}
+              className="sidebar-item"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -215,6 +228,7 @@ export const Sidebar = ({ onClose, showCloseButton }: SidebarProps) => {
             key={id}
             to={`/movies?genre=${id}`}
             onClick={onClose}
+            className="sidebar-item"
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -234,10 +248,33 @@ export const Sidebar = ({ onClose, showCloseButton }: SidebarProps) => {
 
       <div style={{ flex: 1 }} />
 
-      {/* Logout */}
-      <div style={{ padding: '12px 12px 16px' }}>
+      {/* Footer Nav */}
+      <div style={{ display: 'flex', flexDirection: 'column', padding: '12px 12px 16px', gap: 4 }}>
+        {isAdmin && (
+          <Link
+            to="/admin/users"
+            onClick={onClose}
+            className="sidebar-item"
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 12,
+              padding: '10px 12px',
+              borderRadius: 8,
+              color: isActive('/admin/users', false) ? A.text : A.muted,
+              fontSize: 13,
+              cursor: 'pointer',
+              textDecoration: 'none',
+              background: isActive('/admin/users', false) ? A.surface2 : 'transparent',
+            }}
+          >
+            <ShieldCheck size={17} weight={isActive('/admin/users', false) ? "fill" : "light"} style={{ color: isActive('/admin/users', false) ? A.text : A.muted }} />
+            <span>Panel Admina</span>
+          </Link>
+        )}
         <button
           onClick={handleSignOut}
+          className="sidebar-item"
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -254,7 +291,7 @@ export const Sidebar = ({ onClose, showCloseButton }: SidebarProps) => {
             textAlign: 'left',
           }}
         >
-          <LogOut size={17} style={{ color: A.muted, strokeWidth: 1.75 }} />
+          <SignOut size={17} weight="light" style={{ color: A.muted }} />
           <span>Wyloguj</span>
         </button>
       </div>

@@ -4,6 +4,12 @@ interface AdditionalInfoGridProps {
   data: DetailedMovie;
 }
 
+const A = {
+  border: 'rgba(255,248,230,0.12)',
+  text: '#f3efe6',
+  text2: '#b8b1a3',
+};
+
 const AdditionalInfoGrid = ({ data }: AdditionalInfoGridProps) => {
   const infoItems = [];
 
@@ -31,11 +37,11 @@ const AdditionalInfoGrid = ({ data }: AdditionalInfoGridProps) => {
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div style={{ borderTop: `1px solid ${A.border}`, display: 'flex', flexWrap: 'wrap', borderBottom: `1px solid ${A.border}` }}>
       {infoItems.map((item, index) => (
-        <div key={index} className="bg-background-secondary rounded-xl p-6">
-          <h3 className="text-sm text-foreground-secondary mb-2">{item.label}</h3>
-          <p className="text-2xl font-bold">{item.value}</p>
+        <div key={index} style={{ flex: '1 1 200px', borderRight: index < infoItems.length - 1 ? `1px solid ${A.border}` : 'none', padding: '32px 24px', textAlign: 'center' }}>
+          <div style={{ fontFamily: '"Instrument Serif", serif', fontStyle: 'italic', fontSize: 36, color: A.text, lineHeight: 1 }}>{item.value}</div>
+          <div style={{ fontFamily: '"JetBrains Mono", monospace', fontSize: 10, color: A.text2, marginTop: 12, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{item.label}</div>
         </div>
       ))}
     </div>
