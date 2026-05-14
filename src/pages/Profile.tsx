@@ -1,6 +1,8 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { SignOut } from '@phosphor-icons/react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 const A = {
   bg: '#0a0a0c',
@@ -11,9 +13,12 @@ const A = {
   amber: '#d4a056',
 };
 
+const APP_VERSION = 'v1.0.22';
+
 const Profile = () => {
   const { user, isAdmin, signOut } = useAuth();
   const navigate = useNavigate();
+  const [isChecking, setIsChecking] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -24,10 +29,38 @@ const Profile = () => {
     }
   };
 
+  const checkForUpdates = async () => {
+    setIsChecking(true);
+    const loadingToast = toast.loading('Sprawdzanie dostępności aktualizacji...');
+    try {
+      const res = await fetch('https://api.github.com/repos/GaloszJakub/Archiwum/releases/latest');
+      if (!res.ok) throw new Error('Błąd połączenia');
+      const data = await res.json();
+      
+      if (data.tag_name && data.tag_name !== APP_VERSION) {
+        toast.success(`Dostępna nowa wersja: ${data.tag_name}`, { id: loadingToast });
+        setTimeout(() => {
+          window.open(data.html_url, '_blank');
+        }, 1500);
+      } else {
+        toast.success(`Masz najnowszą wersję (${APP_VERSION})`, { id: loadingToast });
+      }
+    } catch (error) {
+      toast.error('Brak połączenia z głównym archiwum GitHuba.', { id: loadingToast });
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
   const initial = user?.displayName?.[0]?.toUpperCase() || 'U';
 
   const menuItems = [
     { label: 'Informacje o koncie', sub: user?.email || '', action: undefined },
+    { 
+      label: 'System Archiwum', 
+      sub: isChecking ? 'Nawiązywanie połączenia...' : `Wersja ${APP_VERSION} — Sprawdź aktualizacje`, 
+      action: isChecking ? undefined : checkForUpdates 
+    },
   ];
 
   if (isAdmin) {

@@ -42,51 +42,6 @@ const Login = () => {
       className="min-h-screen flex items-center justify-center p-4 sm:p-6 relative overflow-hidden"
       style={{ backgroundColor: A.bg }}
     >
-      {/* Fullscreen Background GIF */}
-      <img
-        src="/mlg.gif"
-        alt="Background"
-        style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          objectFit: "cover",
-          zIndex: 0,
-          opacity: 0.35, // Przyciemnione, by nie zasłaniać tekstu
-        }}
-      />
-
-      {/* Top Left GIF */}
-      <img
-        src="/tung.gif"
-        alt=""
-        style={{
-          position: "absolute",
-          top: 16,
-          left: 16,
-          width: "30vw",
-          maxWidth: "250px",
-          zIndex: 5,
-          objectFit: "contain",
-        }}
-      />
-
-      {/* Top Right GIF */}
-      <img
-        src="/ss.gif"
-        alt=""
-        style={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          width: "30vw",
-          maxWidth: "250px",
-          zIndex: 5,
-          objectFit: "contain",
-        }}
-      />
 
       {/* Subtle Neon Glow */}
       <div
@@ -111,29 +66,7 @@ const Login = () => {
         style={{ border: `1px solid ${A.border}`, background: A.bg }}
       >
         <div className="flex flex-col items-center text-center">
-          <div
-            style={{
-              position: "relative",
-              width: 170,
-              height: 140,
-              marginBottom: 20,
-            }}
-          >
-            <img
-              src="/jp2.gif"
-              alt="Archiwum"
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "cover",
-                maskImage:
-                  "radial-gradient(ellipse, black 15%, transparent 75%)",
-                WebkitMaskImage:
-                  "radial-gradient(ellipse, black 15%, transparent 75%)",
-                opacity: 0.85,
-              }}
-            />
-          </div>
+
           <h1
             className="text-4xl sm:text-5xl mb-3 sm:mb-4"
             style={{
@@ -160,20 +93,7 @@ const Login = () => {
 
         {/* Google button with Guard */}
         <div className="relative w-full">
-          {/* The Monster Guard */}
-          <img
-            src="/Barimnog.webp"
-            alt="Strażnik"
-            style={{
-              position: "absolute",
-              left: "-45px", // Ustawiony obok przycisku
-              bottom: "-5px", // Stoi równo z dolną krawędzią
-              height: "70px", // Odpowiedni rozmiar
-              zIndex: 20,
-              pointerEvents: "none",
-              filter: "drop-shadow(0px 4px 10px rgba(0,0,0,0.8))", // Aby lepiej odcinał się od tła
-            }}
-          />
+
           <button
             onClick={handleGoogleSignIn}
             disabled={isLoading}
@@ -225,30 +145,6 @@ const Login = () => {
             </span>
           </button>
         </div>
-      </div>
-
-      {/* Bottom GTA GIF */}
-      <div
-        style={{
-          position: "absolute",
-          bottom: 16,
-          left: 16,
-          right: 16,
-          zIndex: 5,
-          display: "flex",
-          justifyContent: "center",
-          pointerEvents: "none",
-        }}
-      >
-        <img
-          src="/gta.gif"
-          alt=""
-          style={{
-            width: "100%",
-            maxHeight: "25vh",
-            objectFit: "contain",
-          }}
-        />
       </div>
     </div>
   );
