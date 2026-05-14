@@ -4,6 +4,11 @@ const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
 const TMDB_BASE_URL = 'https://api.themoviedb.org/3';
 const TMDB_IMAGE_BASE_URL = 'https://image.tmdb.org/t/p/w500';
 
+// Debug: log if API key is missing
+if (!TMDB_API_KEY) {
+  console.error('TMDB API KEY is missing! import.meta.env:', JSON.stringify(import.meta.env));
+}
+
 export interface Movie {
     id: number;
     title?: string;
