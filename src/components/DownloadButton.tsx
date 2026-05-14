@@ -35,9 +35,10 @@ export const DownloadButton = ({ url, title, episode }: DownloadButtonProps) => 
     setError('');
 
     try {
+      console.log('Download started for URL:', url);
       // 1. Extract direct URL
       const directUrl = await extractVoeDirectUrl(url);
-      console.log('Direct URL:', directUrl);
+      console.log('Direct URL extracted:', directUrl);
 
       if (!Capacitor.isNativePlatform()) {
         // Web: just open the URL
@@ -48,6 +49,7 @@ export const DownloadButton = ({ url, title, episode }: DownloadButtonProps) => 
 
       // 2. Download file
       setState('downloading');
+      console.log('Starting file download...');
       const filename = `${title}${episode ? `_${episode}` : ''}.mp4`.replace(/[^a-zA-Z0-9._-]/g, '_');
 
       await downloadFile(directUrl, filename, (p: DownloadProgress) => {
