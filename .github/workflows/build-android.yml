@@ -49,8 +49,17 @@ jobs:
           mkdir -p ~/.android
           if [ -n "${{ secrets.DEBUG_KEYSTORE }}" ]; then
             echo "${{ secrets.DEBUG_KEYSTORE }}" | base64 -d > ~/.android/debug.keystore
+            echo "Keystore file size: $(wc -c < ~/.android/debug.keystore) bytes"
+            keytool -list -keystore ~/.android/debug.keystore -storepass android 2>&1 || true
+            echo "---"
+            keytool -list -v -keystore ~/.android/debug.keystore -storepass android 2>&1 | grep -i "sha1" || echo "SHA1 not found in keystore"
           else
+            echo "No DEBUG_KEYSTORE secret, generating new one..."
             keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebug -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Archiwum,OU=Dev,O=Archiwum,L=PL,ST=PL,C=PL"
+            keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebug -storepass android | grep SHA1
+            echo "Base64 (save as DEBUG_KEYSTORE secret):"
+            base64 -w 0 ~/.android/debug.keystore
+            echo ""
           fi
 
       - name: Build APK
