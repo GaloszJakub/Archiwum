@@ -52,12 +52,6 @@ jobs:
           else
             keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebug -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Archiwum,OU=Dev,O=Archiwum,L=PL,ST=PL,C=PL"
           fi
-          echo "Debug keystore SHA-1:"
-          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebug -storepass android | grep SHA1
-          echo ""
-          echo "Base64 keystore (add as DEBUG_KEYSTORE secret to keep SHA-1 stable):"
-          base64 -w 0 ~/.android/debug.keystore
-          echo ""
 
       - name: Build APK
         run: |
