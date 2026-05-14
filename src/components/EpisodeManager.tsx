@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { DownloadButton } from '@/components/DownloadButton';
 import {
   Dialog,
   DialogContent,
@@ -62,8 +63,6 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
   const [link, setLink] = useState('');
   const [quality, setQuality] = useState('1080p');
   const [language, setLanguage] = useState('PL');
-  const [playerOpen, setPlayerOpen] = useState(false);
-  const [currentPlayerUrl, setCurrentPlayerUrl] = useState('');
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [linkToDelete, setLinkToDelete] = useState<{ episodeNumber: number; linkIndex: number } | null>(null);
   const [deleteAllDialogOpen, setDeleteAllDialogOpen] = useState(false);
@@ -80,10 +79,10 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
     watchedEpisodes?.map(ep => `${ep.seasonNumber}_${ep.episodeNumber}`) || []
   );
 
-  useWakeLock(playerOpen);
+  useWakeLock(open);
 
   useEffect(() => {
-    if (open || playerOpen) {
+    if (open) {
       stopLenis();
       const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
       document.body.style.overflow = 'hidden';
@@ -99,7 +98,7 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
       document.body.style.overflow = '';
       document.body.style.paddingRight = '';
     };
-  }, [open, playerOpen]);
+  }, [open]);
 
   useScrollToEpisode({
     targetEpisode,
@@ -110,8 +109,8 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
 
   const handlePlayClick = (url: string, episodeNumber: number, e: React.MouseEvent) => {
     e.preventDefault();
-    setCurrentPlayerUrl(url);
-    setPlayerOpen(true);
+    // Open in new tab — iframe causes crashes with some hosts (Doodstream)
+    window.open(url, '_blank');
 
     if (user) {
       markEpisodeWatched.mutate({ tmdbId, seasonNumber, episodeNumber });
@@ -434,18 +433,25 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
                               {linkItem.version && <span style={{ color: A.text2 }}> • {linkItem.version}</span>}
                             </span>
                           </button>
-                          {isAdmin && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleDeleteLink(tmdbEpisode.episode_number, idx);
-                              }}
-                              style={{ background: 'transparent', border: 'none', color: A.red, fontFamily: '"JetBrains Mono", monospace', fontSize: 10, cursor: 'pointer', padding: '0 4px' }}
-                              className="opacity-0 group-hover/link:opacity-100 transition-opacity"
-                            >
-                              [X]
-                            </button>
-                          )}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                            <DownloadButton
+                              url={linkItem.url}
+                              title={seriesName || ''}
+                              episode={`S${String(seasonNumber).padStart(2, '0')}E${String(tmdbEpisode.episode_number).padStart(2, '0')}`}
+                            />
+                            {isAdmin && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteLink(tmdbEpisode.episode_number, idx);
+                                }}
+                                style={{ background: 'transparent', border: 'none', color: A.red, fontFamily: '"JetBrains Mono", monospace', fontSize: 10, cursor: 'pointer', padding: '0 4px' }}
+                                className="opacity-0 group-hover/link:opacity-100 transition-opacity"
+                              >
+                                [X]
+                              </button>
+                            )}
+                          </div>
                         </div>
                       ))
                     ) : dbEpisode.link ? (
@@ -485,22 +491,6 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
           })}
         </div>
       )}
-
-      {/* Player Modal */}
-      <Dialog open={playerOpen} onOpenChange={setPlayerOpen}>
-        <DialogContent className="max-w-7xl w-full h-[90vh] p-0" style={{ border: `1px solid ${A.border}`, borderRadius: 0, background: '#000' }} aria-describedby={undefined}>
-          <DialogTitle className="sr-only">Odtwarzacz</DialogTitle>
-          <div className="relative w-full h-full bg-black">
-            <iframe
-              src={currentPlayerUrl}
-              className="w-full h-full"
-              allowFullScreen
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-              title="Video Player"
-            />
-          </div>
-        </DialogContent>
-      </Dialog>
 
       {/* Delete Single Link Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
