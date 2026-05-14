@@ -42,6 +42,9 @@ export async function extractVoeDirectUrl(embedUrl: string): Promise<string> {
     throw new Error('Empty response from VoeSX');
   }
 
+  console.log('VoeSX HTML length:', html.length);
+  console.log('VoeSX first 1000:', html.substring(0, 1000));
+
   // VoeSX patterns to find video URL:
   
   // Pattern: 'mp4': 'URL' or "mp4": "URL"
