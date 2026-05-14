@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { DownloadButton } from '@/components/DownloadButton';
 import {
   Dialog,
   DialogContent,
@@ -433,25 +432,18 @@ export const EpisodeManager = ({ tmdbId, seasonNumber, episodeCount, seasonName,
                               {linkItem.version && <span style={{ color: A.text2 }}> • {linkItem.version}</span>}
                             </span>
                           </button>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                            <DownloadButton
-                              url={linkItem.url}
-                              title={seriesName || ''}
-                              episode={`S${String(seasonNumber).padStart(2, '0')}E${String(tmdbEpisode.episode_number).padStart(2, '0')}`}
-                            />
-                            {isAdmin && (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleDeleteLink(tmdbEpisode.episode_number, idx);
-                                }}
-                                style={{ background: 'transparent', border: 'none', color: A.red, fontFamily: '"JetBrains Mono", monospace', fontSize: 10, cursor: 'pointer', padding: '0 4px' }}
-                                className="opacity-0 group-hover/link:opacity-100 transition-opacity"
-                              >
-                                [X]
-                              </button>
-                            )}
-                          </div>
+                          {isAdmin && (
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteLink(tmdbEpisode.episode_number, idx);
+                              }}
+                              style={{ background: 'transparent', border: 'none', color: A.red, fontFamily: '"JetBrains Mono", monospace', fontSize: 10, cursor: 'pointer', padding: '0 4px' }}
+                              className="opacity-0 group-hover/link:opacity-100 transition-opacity"
+                            >
+                              [X]
+                            </button>
+                          )}
                         </div>
                       ))
                     ) : dbEpisode.link ? (

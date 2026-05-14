@@ -6,8 +6,6 @@ const config: CapacitorConfig = {
   webDir: 'dist',
   server: {
     androidScheme: 'https',
-    // Enable native HTTP for all requests (bypasses CORS)
-    allowNavigation: ['*'],
   },
   android: {
     backgroundColor: '#0a0a0c',
