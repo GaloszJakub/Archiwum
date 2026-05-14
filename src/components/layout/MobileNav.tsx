@@ -12,8 +12,8 @@ const navItems = [
   { path: '/', exact: true, Icon: House, label: 'Strona główna' },
   { path: '/search', exact: false, Icon: MagnifyingGlass, label: 'Szukaj' },
   { path: '/movies', exact: false, Icon: FilmStrip, label: 'Filmy' },
-  { path: '/collections', exact: false, Icon: Heart, label: 'Lista' },
   { path: '/series', exact: false, Icon: Television, label: 'Seriale' },
+  { path: '/collections', exact: false, Icon: Heart, label: 'Lista' },
 ];
 
 export function MobileNav() {
@@ -60,21 +60,14 @@ export function MobileNav() {
               }}
             >
               <Icon
-                size={20}
+                size={26}
                 weight={isActive ? "fill" : "light"}
                 style={{
                   color: isActive ? A.text : A.muted,
+                  transition: 'color 0.3s ease, transform 0.3s ease',
+                  transform: isActive ? 'scale(1.1)' : 'scale(1)',
                 }}
               />
-              <span
-                style={{
-                  fontSize: 10,
-                  fontWeight: isActive ? 600 : 500,
-                  letterSpacing: '0.01em',
-                }}
-              >
-                {label}
-              </span>
             </Link>
           );
         })}
